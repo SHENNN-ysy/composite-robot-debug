@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
-import { Form, Input, Button, Space, message, DatePicker, Select, Table, Modal, Tag } from 'antd';
+import { useState, useEffect } from 'react';
+import { Form, Input, Button, Space, message, Select, Table, Modal, Tag } from 'antd';
 import { PlusOutlined, DeleteOutlined, EditOutlined, ReloadOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import styles from '../styles/common.module.css';
+import pageStyles from './Settings.module.css';
 
 export type SettingsTab = 'general' | 'user' | 'about';
 
@@ -149,7 +151,7 @@ export default function Settings({ initialTab = 'general' }: SettingsProps) {
       dataIndex: 'password',
       key: 'password',
       width: '20%',
-      render: (pwd: string) => '••••••',
+      render: () => '••••••',
     },
     {
       title: '账号等级',
@@ -193,7 +195,7 @@ export default function Settings({ initialTab = 'general' }: SettingsProps) {
 
   return (
     <div>
-      <div className="page-header">
+      <div className={styles.pageHeader}>
         <h2>
           {activeTab === 'general' && '通用设置'}
           {activeTab === 'user' && '用户设置'}
@@ -209,7 +211,7 @@ export default function Settings({ initialTab = 'general' }: SettingsProps) {
             <div className="settings-row">
               <div className="settings-label">系统时间</div>
               <div className="settings-control">
-                <span style={{ fontSize: 14, color: '#262626' }}>
+                <span className={pageStyles.systemTime}>
                   {currentTime.format('YYYY-MM-DD HH:mm:ss')}
                 </span>
               </div>
@@ -331,7 +333,7 @@ export default function Settings({ initialTab = 'general' }: SettingsProps) {
 
       {activeTab === 'user' && (
         <div>
-          <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 16 }}>
+          <div className={pageStyles.userToolbar}>
             <Button type="primary" icon={<PlusOutlined />} onClick={handleAddUser}>
               添加账号
             </Button>
@@ -400,7 +402,7 @@ export default function Settings({ initialTab = 'general' }: SettingsProps) {
           <div className="settings-row">
             <div className="settings-label">机器人型号</div>
             <div className="settings-control">
-              <span style={{ fontWeight: 500 }}>CR-2026-Pro 复合机器人</span>
+              <span className={pageStyles.infoValue}>CR-2026-Pro 复合机器人</span>
             </div>
           </div>
 
@@ -418,12 +420,12 @@ export default function Settings({ initialTab = 'general' }: SettingsProps) {
             </div>
           </div>
 
-          <div className="settings-section-title" style={{ marginTop: 32 }}>软件信息</div>
+          <div className={pageStyles.sectionTitle}>软件信息</div>
 
           <div className="settings-row">
             <div className="settings-label">软件名称</div>
             <div className="settings-control">
-              <span style={{ fontWeight: 500 }}>复合机器人调试平台</span>
+              <span className={pageStyles.infoValue}>复合机器人调试平台</span>
             </div>
           </div>
 
@@ -441,7 +443,7 @@ export default function Settings({ initialTab = 'general' }: SettingsProps) {
             </div>
           </div>
 
-          <div className="settings-section-title" style={{ marginTop: 32 }}>技术支持</div>
+          <div className={pageStyles.sectionTitle}>技术支持</div>
 
           <div className="settings-row">
             <div className="settings-label">技术支持方</div>
@@ -467,7 +469,7 @@ export default function Settings({ initialTab = 'general' }: SettingsProps) {
           <div className="settings-row">
             <div className="settings-label">官网</div>
             <div className="settings-control">
-              <a href="#" style={{ color: '#f58020' }}>www.robot-debug.com</a>
+              <a href="#" className={pageStyles.link}>www.robot-debug.com</a>
             </div>
           </div>
 

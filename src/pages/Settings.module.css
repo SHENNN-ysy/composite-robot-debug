@@ -1,0 +1,30 @@
+/* Settings 页面样式 */
+
+.userToolbar {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 16px;
+}
+
+.systemTime {
+  font-size: 14px;
+  color: #262626;
+}
+
+.infoValue {
+  font-weight: 500;
+}
+
+.link {
+  color: #f58020;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: #262626;
+  margin-top: 32px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}

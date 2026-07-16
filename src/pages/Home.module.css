@@ -1,0 +1,83 @@
+/* Home 页面样式 */
+
+/* 设备状态行 */
+.deviceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.deviceRow:last-child {
+  border-bottom: none;
+}
+
+.deviceInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.deviceIcon {
+  font-size: 20px;
+}
+
+/* 关节状态网格 */
+.jointGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.jointCell {
+  background: #fafafa;
+  padding: 8px 12px;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.jointLabel {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.jointValue {
+  font-size: 16px;
+  font-weight: 500;
+  color: #262626;
+}
+
+/* 状态信息行 */
+.statusRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.statusRow:last-child {
+  margin-bottom: 0;
+}
+
+.statusLabel {
+  color: #595959;
+}
+
+.statusValue {
+  font-weight: 500;
+  color: #262626;
+}
+
+/* 日志级别颜色 */
+.levelInfo {
+  color: #52c41a;
+}
+
+.levelWarn {
+  color: #faad14;
+}
+
+.levelError {
+  color: #ff4d4f;
+}

@@ -69,8 +69,6 @@ export const theme: ThemeConfig = {
       horizontalItemSelectedColor: '#f58020',
       horizontalItemHoverColor: '#d66d10',
       darkItemBg: '#1f1f1f',
-      darkItemSelectedBg: '#f58020',
-      darkItemSelectedTextColor: '#ffffff',
     },
 
     Button: {
@@ -132,8 +130,8 @@ export const theme: ThemeConfig = {
     },
 
     Alert: {
-      infoBg: '#e6f7ff',
-      infoBorderColor: '#91d5ff',
+      colorInfoBg: '#e6f7ff',
+      colorInfoBorder: '#91d5ff',
     },
 
     Badge: {

@@ -26,7 +26,7 @@ export interface AGVState {
   stop: () => void;
 }
 
-// 模拟工位数据
+// 模拟站点数据
 const mockStations: Station[] = [
   { id: 'station-1', name: '工位1', x: 80, y: 60 },
   { id: 'station-2', name: '工位2', x: 250, y: 60 },
@@ -72,7 +72,7 @@ export const useAGVStore = create<AGVState>((set, get) => ({
 
     set({ status: 'moving', targetStation: stationId });
 
-    // 模拟移动过程
+    // 模拟移动动画
     const { position } = get();
     const steps = 20;
     const dx = (targetStation.x - position.x) / steps;

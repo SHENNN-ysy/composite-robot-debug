@@ -1,0 +1,141 @@
+/* FlowEditor 页面样式 */
+
+.editor {
+  height: calc(100vh - 200px);
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.toolbar {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.palette {
+  width: 240px;
+  background: #ffffff;
+  border-right: 1px solid #f0f0f0;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.paletteHeader {
+  font-weight: 500;
+  margin-bottom: 12px;
+  color: #262626;
+}
+
+.category {
+  margin-bottom: 16px;
+}
+
+.categoryTitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: #8c8c8c;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  background: #fafafa;
+  border-radius: 6px;
+  cursor: grab;
+  font-size: 13px;
+  color: #595959;
+  transition: all 0.2s;
+}
+
+.item:hover {
+  background: #fff7ed;
+  color: #f58020;
+}
+
+.itemIcon {
+  font-size: 16px;
+}
+
+.canvas {
+  flex: 1;
+  height: 100%;
+  background: #fafafa;
+}
+
+.propertyPanel {
+  width: 280px;
+  background: #ffffff;
+  border-left: 1px solid #f0f0f0;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.panelHeader {
+  font-weight: 500;
+  margin-bottom: 16px;
+  color: #262626;
+}
+
+.emptyHint {
+  color: #8c8c8c;
+  text-align: center;
+  padding: 20px;
+}
+
+.logSection {
+  margin-top: 24px;
+}
+
+.logSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-weight: 500;
+  color: #262626;
+}
+
+.logContainer {
+  background: #1f1f1f;
+  border-radius: 8px;
+  padding: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 12px;
+}
+
+.logItem {
+  margin-bottom: 4px;
+  line-height: 1.6;
+}
+
+.logTime {
+  color: #8c8c8c;
+}
+
+.logInfo {
+  color: #52c41a;
+}
+
+.logWarn {
+  color: #faad14;
+}
+
+.logError {
+  color: #ff4d4f;
+}
+
+/* 启动按钮 */
+.runButton {
+  background: #52c41a !important;
+  border-color: #52c41a !important;
+}

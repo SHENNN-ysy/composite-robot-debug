@@ -1,0 +1,19 @@
+/* StatusLog 页面样式 */
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 4px 0;
+}
+
+.footerInfo {
+  color: #595959;
+  font-size: 13px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}

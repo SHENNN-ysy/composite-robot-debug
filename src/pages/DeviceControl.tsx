@@ -42,6 +42,8 @@ import { useAGVStore } from '../store/agv';
 import { useLogStore } from '../store/logs';
 import { useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
+import styles from '../styles/common.module.css';
+import pageStyles from './DeviceControl.module.css';
 
 type TabKey = 'list' | 'status';
 
@@ -83,7 +85,6 @@ export default function DeviceControl() {
   const agv = useAGVStore();
   const { addLog } = useLogStore();
 
-  // 设备列表本地数据
   const [devices, setDevices] = useState<DeviceInfo[]>(initialDevices);
   const [editTarget, setEditTarget] = useState<DeviceInfo | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -99,7 +100,6 @@ export default function DeviceControl() {
   const [calibrationStep, setCalibrationStep] = useState(5);
   const [stationModalOpen, setStationModalOpen] = useState(false);
 
-  // 真实设备状态与本地列表联动
   const refreshDeviceConnected = (id: string, connected: boolean) => {
     setDevices((prev) => prev.map((d) => (d.id === id ? { ...d, connected } : d)));
   };
@@ -165,18 +165,18 @@ export default function DeviceControl() {
     });
   };
 
-  const handleAgvMove = (direction: '前进' | '后退' | '左转' | '右转') => {
+  const handleAgvMove = (direction: '前进' | '后退' | '左转' | '右转' | '急停') => {
     if (!agv.isConnected) return;
     const nextPosition = { ...agv.position };
     if (direction === '前进') nextPosition.y -= agvDistance * 100;
     if (direction === '后退') nextPosition.y += agvDistance * 100;
     if (direction === '左转') nextPosition.x -= agvDistance * 100;
     if (direction === '右转') nextPosition.x += agvDistance * 100;
+    if (direction === '急停') agv.stop();
     agv.setPosition(nextPosition.x, nextPosition.y);
     addLog('info', `AGV${direction}：速度 ${agvSpeed} m/s，距离 ${agvDistance} m`);
   };
 
-  /* ---------- 设备列表页 ---------- */
   const deviceColumns: TableProps<DeviceInfo>['columns'] = [
     { title: '序号', key: 'idx', width: 60, render: (_v, _r, idx) => idx + 1 },
     { title: '设备名称', dataIndex: 'name', key: 'name', width: 160 },
@@ -278,7 +278,7 @@ export default function DeviceControl() {
         </Space>
       }
     >
-      <div style={{ marginBottom: 16 }}>
+      <div className={styles.mb16}>
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -296,16 +296,14 @@ export default function DeviceControl() {
         bordered
       />
       <Divider style={{ margin: '16px 0' }} />
-      <div style={{ color: '#8c8c8c', fontSize: 12 }}>
+      <div className={pageStyles.tipText}>
         提示：编辑可修改设备的 IP、端口和通讯协议；连接/断开与控制面板共用同一连接状态。
       </div>
     </Card>
   );
 
-  /* ---------- 设备状态页 ---------- */
   const renderDeviceStatus = () => (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
-      {/* 机械臂状态面板 */}
       <Card
         title={
           <Space>
@@ -319,7 +317,7 @@ export default function DeviceControl() {
         }
         extra={
           <Space>
-            <span style={{ color: '#8c8c8c' }}>工作模式</span>
+            <span className={styles.textTertiary}>工作模式</span>
             <Select
               size="small"
               value={robotArm.mode}
@@ -334,31 +332,32 @@ export default function DeviceControl() {
           </Space>
         }
       >
-        {/* 速度 + 停止 + 原点复归 */}
         <Row gutter={16} align="middle">
           <Col xs={24} md={10}>
-            <div style={{ marginBottom: 4 }}>
-              <span style={{ color: '#8c8c8c', fontSize: 13 }}>速度</span>
-              <span style={{ float: 'right', color: '#262626', fontWeight: 600 }}>{robotArm.speed}%</span>
+            <div className={pageStyles.speedSection}>
+              <div className={pageStyles.speedLabel}>
+                <span>速度</span>
+                <span className={pageStyles.speedValue}>{robotArm.speed}%</span>
+              </div>
+              <Slider
+                min={1}
+                max={100}
+                value={robotArm.speed}
+                onChange={(v) => robotArm.setSpeed(v)}
+                disabled={!robotArm.isConnected}
+                railStyle={{ backgroundColor: '#e8e8e8' }}
+                trackStyle={{ backgroundColor: '#f58020' }}
+                handleStyle={{ borderColor: '#f58020', backgroundColor: '#f58020' }}
+                tooltip={{
+                  formatter: (value) => <span style={{ color: '#262626', fontWeight: 600 }}>{value}%</span>,
+                  overlayInnerStyle: { backgroundColor: '#fff', color: '#262626' },
+                }}
+              />
             </div>
-            <Slider
-              min={1}
-              max={100}
-              value={robotArm.speed}
-              onChange={(v) => robotArm.setSpeed(v)}
-              disabled={!robotArm.isConnected}
-              railStyle={{ backgroundColor: '#e8e8e8' }}
-              trackStyle={{ backgroundColor: '#f58020' }}
-              handleStyle={{ borderColor: '#f58020', backgroundColor: '#f58020' }}
-              tooltip={{
-                formatter: (value) => <span style={{ color: '#262626', fontWeight: 600 }}>{value}%</span>,
-                overlayInnerStyle: { backgroundColor: '#fff', color: '#262626' },
-              }}
-            />
           </Col>
           <Col xs={24} md={6}>
             <Button
-              style={{ marginTop: 4 }}
+              className={pageStyles.speedButton}
               onClick={() => message.info(`当前速度已设置为 ${robotArm.speed}%`)}
               disabled={!robotArm.isConnected}
             >
@@ -386,12 +385,11 @@ export default function DeviceControl() {
           </Col>
         </Row>
 
-        <Divider style={{ margin: '12px 0' }} />
+        <Divider className={styles.divider} />
 
-        {/* 步长设置 */}
-        <div style={{ marginBottom: 16 }}>
+        <div className={pageStyles.stepLengthSection}>
           <Space>
-            <span style={{ color: '#8c8c8c' }}>步长设置</span>
+            <span className={styles.textTertiary}>步长设置</span>
             <InputNumber
               size="small"
               min={0.1}
@@ -405,25 +403,15 @@ export default function DeviceControl() {
           </Space>
         </div>
 
-        <Divider style={{ margin: '12px 0' }} />
+        <Divider className={styles.divider} />
 
-        {/* 步进运动按钮组 */}
-        <div style={{ marginBottom: 8, color: '#8c8c8c', fontSize: 13 }}>步进运动</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
+        <div className={pageStyles.stepSection}>步进运动</div>
+        <div className={pageStyles.stepGrid}>
           {(['x', 'y', 'z', 'rx', 'ry', 'rz'] as (keyof CartesianPose)[]).map((axis) => (
-            <div
-              key={axis}
-              style={{ display: 'grid', gridTemplateColumns: 'auto 200px auto', gap: 8, alignItems: 'center' }}
-            >
+            <div key={axis} className={pageStyles.stepRow}>
               <Button
                 type="primary"
-                style={{
-                  background: '#f58020',
-                  borderColor: '#f58020',
-                  minWidth: 80,
-                  height: 36,
-                  padding: '0 14px',
-                }}
+                className={styles.actionButton}
                 icon={<MinusOutlined />}
                 onClick={() => robotArm.stepAxis(axis, -1)}
                 disabled={!robotArm.isConnected || robotArm.isRunning}
@@ -431,33 +419,14 @@ export default function DeviceControl() {
                 {cartesianLabels[axis]}
               </Button>
               <div
-                style={{
-                  textAlign: 'center',
-                  background: '#fafafa',
-                  border: '1px solid #f0f0f0',
-                  borderRadius: 4,
-                  padding: '0 16px',
-                  height: 36,
-                  minWidth: 200,
-                  fontFamily: 'monospace',
-                  fontSize: 18,
-                  fontWeight: 600,
-                  color: '#262626',
-                  lineHeight: '34px',
-                }}
+                className={styles.valueBoxLarge}
                 title={`${cartesianLabels[axis]} 当前值`}
               >
                 {robotArm.tcp[axis].toFixed(2)}
               </div>
               <Button
                 type="primary"
-                style={{
-                  background: '#f58020',
-                  borderColor: '#f58020',
-                  minWidth: 80,
-                  height: 36,
-                  padding: '0 14px',
-                }}
+                className={styles.actionButton}
                 icon={<PlusOutlined />}
                 onClick={() => robotArm.stepAxis(axis, 1)}
                 disabled={!robotArm.isConnected || robotArm.isRunning}
@@ -468,23 +437,13 @@ export default function DeviceControl() {
           ))}
         </div>
 
-        {/* 关节运动按钮组 */}
-        <div style={{ marginBottom: 8, color: '#8c8c8c', fontSize: 13 }}>关节运动</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
+        <div className={pageStyles.stepSection}>关节运动</div>
+        <div className={pageStyles.jointGrid}>
           {(['j1', 'j2', 'j3', 'j4', 'j5', 'j6'] as (keyof JointState)[]).map((joint) => (
-            <div
-              key={joint}
-              style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 8, alignItems: 'center' }}
-            >
+            <div key={joint} className={pageStyles.jointRow}>
               <Button
                 type="primary"
-                style={{
-                  background: '#f58020',
-                  borderColor: '#f58020',
-                  minWidth: 80,
-                  height: 36,
-                  padding: '0 14px',
-                }}
+                className={styles.actionButton}
                 icon={<MinusOutlined />}
                 onClick={() => robotArm.stepJoint(joint, -1)}
                 disabled={!robotArm.isConnected || robotArm.isRunning}
@@ -492,33 +451,14 @@ export default function DeviceControl() {
                 {jointLabels[joint]}
               </Button>
               <div
-                style={{
-                  textAlign: 'center',
-                  background: '#fafafa',
-                  border: '1px solid #f0f0f0',
-                  borderRadius: 4,
-                  padding: '0 16px',
-                  height: 36,
-                  minWidth: 160,
-                  fontFamily: 'monospace',
-                  fontSize: 18,
-                  fontWeight: 600,
-                  color: '#262626',
-                  lineHeight: '34px',
-                }}
+                className={styles.valueBoxSmall}
                 title={`${jointLabels[joint]} 当前值`}
               >
                 {robotArm.joints[joint].toFixed(1)}°
               </div>
               <Button
                 type="primary"
-                style={{
-                  background: '#f58020',
-                  borderColor: '#f58020',
-                  minWidth: 80,
-                  height: 36,
-                  padding: '0 14px',
-                }}
+                className={styles.actionButton}
                 icon={<PlusOutlined />}
                 onClick={() => robotArm.stepJoint(joint, 1)}
                 disabled={!robotArm.isConnected || robotArm.isRunning}
@@ -530,7 +470,6 @@ export default function DeviceControl() {
         </div>
       </Card>
 
-      {/* AGV 状态面板 */}
       <Card
         className="agv-control-card"
         title={
@@ -544,158 +483,133 @@ export default function DeviceControl() {
           </Space>
         }
         extra={
-          <Space size={24}>
-            <span style={{ color: '#595959' }}>
+          <div className={pageStyles.agv_headerInfo}>
+            <span className={styles.textSecondary}>
               当前位置: <strong style={{ color: '#262626' }}>({agv.position.x.toFixed(0)}, {agv.position.y.toFixed(0)})</strong>
             </span>
-            <span style={{ color: '#595959' }}>
-              电量: <Progress percent={agv.battery} size="small" strokeColor={agv.battery < 20 ? '#ff4d4f' : '#f58020'} style={{ width: 80, display: 'inline-block', verticalAlign: 'middle' }} />
+            <span className={`${styles.textSecondary} ${pageStyles.agv_batteryInfo}`}>
+              <span>电量:</span>
+              <Progress
+                percent={agv.battery}
+                size="small"
+                showInfo={false}
+                strokeColor={agv.battery < 20 ? '#ff4d4f' : '#f58020'}
+                className={pageStyles.agv_batteryProgress}
+              />
+              <span className={pageStyles.agv_batteryPercent}>{agv.battery}%</span>
             </span>
-            <Button type="primary" size="small" onClick={() => setStationModalOpen(true)}>到点功能</Button>
-          </Space>
+            <Button type="primary" size="small" disabled={!agv.isConnected} onClick={() => setStationModalOpen(true)}>到点功能</Button>
+          </div>
         }
       >
-        <div className="agv-remote-panel">
-          <div className="agv-panel-heading">
+        <div className={pageStyles.agv_remotePanel}>
+          <div className={pageStyles.agv_panelHeading}>
             <Space align="center" size={16}>
-              <div className="agv-panel-title">遥控模式</div>
+              <div className={pageStyles.agv_panelTitle}>遥控模式</div>
               <Badge
                 status={agv.status === 'moving' ? 'processing' : agv.status === 'error' ? 'error' : 'success'}
                 text={agv.status === 'moving' ? '移动中' : agv.status === 'error' ? '异常' : '待机'}
               />
               <Divider type="vertical" style={{ margin: '0 8px' }} />
-              <span className="agv-panel-description">设置单次运动参数并控制 AGV 移动</span>
+              <span className={pageStyles.agv_panelDescription}>设置单次运动参数并控制 AGV 移动</span>
             </Space>
           </div>
 
-          <div className="agv-control-layout">
-            <div className="agv-control-column">
-              <section className="agv-control-section">
-                <div className="agv-section-title">运动参数</div>
-                <div className="agv-parameter-grid">
-                  <div className="agv-field">
-                    <label>运动速度 <span style={{ color: '#8c8c8c', fontSize: 12 }}>m/s</span></label>
+          <div className={pageStyles.agv_controlLayout}>
+            <div className={pageStyles.agv_controlColumn}>
+              <section className={pageStyles.agv_controlSection}>
+                <div className={pageStyles.agv_sectionTitle}>
+                  <span>运动参数</span>
+                  <Button type="primary" size="small" disabled={!agv.isConnected}>设置参数</Button>
+                </div>
+                <div className={pageStyles.agv_parameterGrid}>
+                  <div className={pageStyles.agv_field}>
+                  <div className={pageStyles.stepSection}>运动速度：m/s</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Button
                         type="primary"
-                        style={{ width: 28, height: 28, padding: 0, background: '#f58020', borderColor: '#f58020' }}
+                        className={styles.actionButtonSmall}
                         onClick={() => setAgvSpeed(Math.max(0.01, Math.round((agvSpeed - 0.01) * 100) / 100))}
                         disabled={!agv.isConnected}
                       >−</Button>
                       <input
-                        type="number"
                         value={agvSpeed}
                         onChange={(e) => setAgvSpeed(parseFloat(e.target.value) || 0)}
                         disabled={!agv.isConnected}
-                        style={{
-                          width: 60,
-                          height: 28,
-                          textAlign: 'center',
-                          border: '1px solid #d9d9d9',
-                          borderRadius: 4,
-                          fontFamily: 'monospace',
-                          fontSize: 13,
-                        }}
+                        className={styles.numberInput}
                       />
                       <Button
                         type="primary"
-                        style={{ width: 28, height: 28, padding: 0, background: '#f58020', borderColor: '#f58020' }}
+                        className={styles.actionButtonSmall}
                         onClick={() => setAgvSpeed(Math.min(10, Math.round((agvSpeed + 0.01) * 100) / 100))}
                         disabled={!agv.isConnected}
                       >+</Button>
                     </div>
                   </div>
-                  <div className="agv-field">
-                    <label>运动距离 <span style={{ color: '#8c8c8c', fontSize: 12 }}>m</span></label>
+                  <div className={pageStyles.agv_field}>
+                  <div className={pageStyles.stepSection}>运动距离：m</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Button
                         type="primary"
-                        style={{ width: 28, height: 28, padding: 0, background: '#f58020', borderColor: '#f58020' }}
+                        className={styles.actionButtonSmall}
                         onClick={() => setAgvDistance(Math.max(0.01, Math.round((agvDistance - 0.01) * 100) / 100))}
                         disabled={!agv.isConnected}
                       >−</Button>
                       <input
-                        type="number"
                         value={agvDistance}
                         onChange={(e) => setAgvDistance(parseFloat(e.target.value) || 0)}
                         disabled={!agv.isConnected}
-                        style={{
-                          width: 60,
-                          height: 28,
-                          textAlign: 'center',
-                          border: '1px solid #d9d9d9',
-                          borderRadius: 4,
-                          fontFamily: 'monospace',
-                          fontSize: 13,
-                        }}
+                        className={styles.numberInput}
                       />
                       <Button
                         type="primary"
-                        style={{ width: 28, height: 28, padding: 0, background: '#f58020', borderColor: '#f58020' }}
+                        className={styles.actionButtonSmall}
                         onClick={() => setAgvDistance(Math.min(100, Math.round((agvDistance + 0.01) * 100) / 100))}
                         disabled={!agv.isConnected}
                       >+</Button>
                     </div>
                   </div>
-                  <div className="agv-field">
-                    <label>转动角度 <span style={{ color: '#8c8c8c', fontSize: 12 }}>rad</span></label>
+                  <div className={pageStyles.agv_field}>
+                  <div className={pageStyles.stepSection}>转动角度：rad</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Button
                         type="primary"
-                        style={{ width: 28, height: 28, padding: 0, background: '#f58020', borderColor: '#f58020' }}
+                        className={styles.actionButtonSmall}
                         onClick={() => setAgvAngle(Math.max(1, agvAngle - 1))}
                         disabled={!agv.isConnected}
                       >−</Button>
                       <input
-                        type="number"
                         value={agvAngle}
                         onChange={(e) => setAgvAngle(parseInt(e.target.value) || 0)}
                         disabled={!agv.isConnected}
-                        style={{
-                          width: 60,
-                          height: 28,
-                          textAlign: 'center',
-                          border: '1px solid #d9d9d9',
-                          borderRadius: 4,
-                          fontFamily: 'monospace',
-                          fontSize: 13,
-                        }}
+                        className={styles.numberInput}
                       />
                       <Button
                         type="primary"
-                        style={{ width: 28, height: 28, padding: 0, background: '#f58020', borderColor: '#f58020' }}
+                        className={styles.actionButtonSmall}
                         onClick={() => setAgvAngle(Math.min(180, agvAngle + 1))}
                         disabled={!agv.isConnected}
                       >+</Button>
                     </div>
                   </div>
-                  <div className="agv-field">
-                    <label>转动速度 <span style={{ color: '#8c8c8c', fontSize: 12 }}>rad/s</span></label>
+                  <div className={pageStyles.agv_field}>
+                  <div className={pageStyles.stepSection}>转动速度：rad/s</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Button
                         type="primary"
-                        style={{ width: 28, height: 28, padding: 0, background: '#f58020', borderColor: '#f58020' }}
+                        className={styles.actionButtonSmall}
                         onClick={() => setAgvAngularSpeed(Math.max(0.01, Math.round((agvAngularSpeed - 0.01) * 100) / 100))}
                         disabled={!agv.isConnected}
                       >−</Button>
                       <input
-                        type="number"
                         value={agvAngularSpeed}
                         onChange={(e) => setAgvAngularSpeed(parseFloat(e.target.value) || 0)}
                         disabled={!agv.isConnected}
-                        style={{
-                          width: 60,
-                          height: 28,
-                          textAlign: 'center',
-                          border: '1px solid #d9d9d9',
-                          borderRadius: 4,
-                          fontFamily: 'monospace',
-                          fontSize: 13,
-                        }}
+                        className={styles.numberInput}
                       />
                       <Button
                         type="primary"
-                        style={{ width: 28, height: 28, padding: 0, background: '#f58020', borderColor: '#f58020' }}
+                        className={styles.actionButtonSmall}
                         onClick={() => setAgvAngularSpeed(Math.min(10, Math.round((agvAngularSpeed + 0.01) * 100) / 100))}
                         disabled={!agv.isConnected}
                       >+</Button>
@@ -704,115 +618,105 @@ export default function DeviceControl() {
                 </div>
               </section>
 
-              <section className="agv-control-section">
-                <div className="agv-section-title">校准控件</div>
-                <div className="agv-calibration-grid">
-                  <label>X 方向 <span style={{ color: '#8c8c8c', fontSize: 12 }}>°</span></label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Button
-                      type="primary"
-                      style={{ width: 28, height: 28, padding: 0, background: '#f58020', borderColor: '#f58020' }}
-                      onClick={() => setCalibrationX(Math.max(-180, calibrationX - 1))}
-                    >−</Button>
-                    <input
-                      type="number"
-                      value={calibrationX}
-                      onChange={(e) => setCalibrationX(parseInt(e.target.value) || 0)}
-                      style={{
-                        width: 60,
-                        height: 28,
-                        textAlign: 'center',
-                        border: '1px solid #d9d9d9',
-                        borderRadius: 4,
-                        fontFamily: 'monospace',
-                        fontSize: 13,
-                      }}
-                    />
-                    <Button
-                      type="primary"
-                      style={{ width: 28, height: 28, padding: 0, background: '#f58020', borderColor: '#f58020' }}
-                      onClick={() => setCalibrationX(Math.min(180, calibrationX + 1))}
-                    >+</Button>
+              <section className={pageStyles.agv_controlSection}>
+                <div className={pageStyles.agv_sectionTitle}>
+                  <span>校准控件</span>
+                  <Button type="primary" size="small" disabled={!agv.isConnected}>设置参数</Button>
+                </div>
+                <div className={pageStyles.agv_calibrationGrid}>
+                  <div className={pageStyles.agv_calibrationGroup}>
+                    <label>X 方向：<span className={styles.labelUnit}> °</span></label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Button
+                        type="primary"
+                        className={styles.actionButtonSmall}
+                        onClick={() => setCalibrationX(Math.max(-180, calibrationX - 1))}
+                        disabled={!agv.isConnected}
+                      >−</Button>
+                      <input
+                        value={calibrationX}
+                        onChange={(e) => setCalibrationX(parseInt(e.target.value) || 0)}
+                        className={styles.numberInput}
+                        disabled={!agv.isConnected}
+                      />
+                      <Button
+                        type="primary"
+                        className={styles.actionButtonSmall}
+                        onClick={() => setCalibrationX(Math.min(180, calibrationX + 1))}
+                        disabled={!agv.isConnected}
+                      >+</Button>
+                    </div>
+                    <Button 
+                    onClick={() => setCalibrationX(90)} disabled={!agv.isConnected}>正向</Button>
                   </div>
-                  <Button onClick={() => setCalibrationX(90)}>正向</Button>
 
-                  <label>Y 方向 <span style={{ color: '#8c8c8c', fontSize: 12 }}>°</span></label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Button
-                      type="primary"
-                      style={{ width: 28, height: 28, padding: 0, background: '#f58020', borderColor: '#f58020' }}
-                      onClick={() => setCalibrationY(Math.max(-180, calibrationY - 1))}
-                    >−</Button>
-                    <input
-                      type="number"
-                      value={calibrationY}
-                      onChange={(e) => setCalibrationY(parseInt(e.target.value) || 0)}
-                      style={{
-                        width: 60,
-                        height: 28,
-                        textAlign: 'center',
-                        border: '1px solid #d9d9d9',
-                        borderRadius: 4,
-                        fontFamily: 'monospace',
-                        fontSize: 13,
-                      }}
-                    />
-                    <Button
-                      type="primary"
-                      style={{ width: 28, height: 28, padding: 0, background: '#f58020', borderColor: '#f58020' }}
-                      onClick={() => setCalibrationY(Math.min(180, calibrationY + 1))}
-                    >+</Button>
+                  <div className={pageStyles.agv_calibrationGroup}>
+                    <label>Y 方向：<span className={styles.labelUnit}>°</span></label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Button
+                        type="primary"
+                        className={styles.actionButtonSmall}
+                        onClick={() => setCalibrationY(Math.max(-180, calibrationY - 1))}
+                        disabled={!agv.isConnected}
+                      >−</Button>
+                      <input
+                        value={calibrationY}
+                        onChange={(e) => setCalibrationY(parseInt(e.target.value) || 0)}
+                        className={styles.numberInput}
+                        disabled={!agv.isConnected}
+                      />
+                      <Button
+                        type="primary"
+                        className={styles.actionButtonSmall}
+                        onClick={() => setCalibrationY(Math.min(180, calibrationY + 1))}
+                        disabled={!agv.isConnected}
+                      >+</Button>
+                    </div>
+                    <Button onClick={() => setCalibrationY(0)} disabled={!agv.isConnected}>正向</Button>
                   </div>
-                  <Button onClick={() => setCalibrationY(0)}>正向</Button>
 
-                  <label>Yaw 方向</label>
-                  <div className="agv-yaw-value">{calibrationYaw === 'positive' ? '正向' : '反向'}</div>
-                  <Button onClick={() => setCalibrationYaw((v) => v === 'positive' ? 'negative' : 'positive')}>切换方向</Button>
-
-                  <label>校准步长 <span style={{ color: '#8c8c8c', fontSize: 12 }}>deg</span></label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Button
-                      type="primary"
-                      style={{ width: 28, height: 28, padding: 0, background: '#f58020', borderColor: '#f58020' }}
-                      onClick={() => setCalibrationStep(Math.max(1, calibrationStep - 1))}
-                    >−</Button>
-                    <input
-                      type="number"
-                      value={calibrationStep}
-                      onChange={(e) => setCalibrationStep(parseInt(e.target.value) || 1)}
-                      style={{
-                        width: 60,
-                        height: 28,
-                        textAlign: 'center',
-                        border: '1px solid #d9d9d9',
-                        borderRadius: 4,
-                        fontFamily: 'monospace',
-                        fontSize: 13,
-                      }}
-                    />
-                    <Button
-                      type="primary"
-                      style={{ width: 28, height: 28, padding: 0, background: '#f58020', borderColor: '#f58020' }}
-                      onClick={() => setCalibrationStep(Math.min(90, calibrationStep + 1))}
-                    >+</Button>
+                  <div className={pageStyles.agv_calibrationGroup}>
+                    <label>Yaw 方向</label>
+                    <div className={pageStyles.agv_yawValue} >{calibrationYaw === 'positive' ? '正向' : '反向'}</div>
+                    <Button onClick={() => setCalibrationYaw((v) => v === 'positive' ? 'negative' : 'positive')} disabled={!agv.isConnected}>切换方向</Button>
                   </div>
-                  <div></div>
+
+                  <div className={pageStyles.agv_calibrationGroup}>
+                    <label>校准步长：<span className={styles.labelUnit}>deg</span></label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Button
+                        type="primary"
+                        className={styles.actionButtonSmall}
+                        onClick={() => setCalibrationStep(Math.max(1, calibrationStep - 1))}
+                        disabled={!agv.isConnected}
+                      >−</Button>
+                      <input
+                        value={calibrationStep}
+                        onChange={(e) => setCalibrationStep(parseInt(e.target.value) || 1)}
+                        className={styles.numberInput}
+                        disabled={!agv.isConnected}
+                      />
+                      <Button
+                        type="primary"
+                        className={styles.actionButtonSmall}
+                        onClick={() => setCalibrationStep(Math.min(90, calibrationStep + 1))}
+                        disabled={!agv.isConnected}
+                      >+</Button>
+                    </div>
+                    <div></div>
+                  </div>
                 </div>
               </section>
             </div>
 
-            <section className="agv-control-section agv-direction-section">
-              <div className="agv-section-title">方向控制</div>
-              <div className="agv-direction-hint">X axis / Y axis</div>
-              <div className="agv-direction-pad">
-                <Button type="primary" className="agv-direction-button agv-forward" icon={<ArrowUpOutlined />} onClick={() => handleAgvMove('前进')} disabled={!agv.isConnected}>前进</Button>
-                <Button type="primary" className="agv-direction-button agv-left" icon={<ArrowLeftOutlined />} onClick={() => handleAgvMove('左转')} disabled={!agv.isConnected}>左转</Button>
-                <Button className="agv-emergency-button" danger onClick={agv.stop}>急停</Button>
-                <Button type="primary" className="agv-direction-button agv-right" icon={<ArrowRightOutlined />} onClick={() => handleAgvMove('右转')} disabled={!agv.isConnected}>右转</Button>
-                <Button type="primary" className="agv-direction-button agv-back" icon={<ArrowDownOutlined />} onClick={() => handleAgvMove('后退')} disabled={!agv.isConnected}>后退</Button>
-              </div>
-              <div className="agv-connection-hint">
-                {agv.isConnected ? '控制已启用' : '连接 AGV 后可使用方向控制'}
+            <section className={`${pageStyles.agv_controlSection} ${pageStyles.agv_directionSection}`}>
+              <div className={pageStyles.agv_sectionTitle}>方向控制</div>
+              <div className={pageStyles.agv_directionPad}>
+                <Button type="primary" className={`${pageStyles.agv_directionButton} ${pageStyles.agv_forward}`} icon={<ArrowUpOutlined />} onClick={() => handleAgvMove('前进')} disabled={!agv.isConnected}>前进</Button>
+                <Button type="primary" className={`${pageStyles.agv_directionButton} ${pageStyles.agv_left}`} icon={<ArrowLeftOutlined />} onClick={() => handleAgvMove('左转')} disabled={!agv.isConnected}>左转</Button>
+                <Button type="primary" className={`${pageStyles.agv_emergencyButton} ${pageStyles.agv_middle} `} onClick={() => handleAgvMove('急停')} disabled={!agv.isConnected}>急停</Button>
+                <Button type="primary" className={`${pageStyles.agv_directionButton} ${pageStyles.agv_right}`} icon={<ArrowRightOutlined />} onClick={() => handleAgvMove('右转')} disabled={!agv.isConnected}>右转</Button>
+                <Button type="primary" className={`${pageStyles.agv_directionButton} ${pageStyles.agv_back}`} icon={<ArrowDownOutlined />} onClick={() => handleAgvMove('后退')} disabled={!agv.isConnected}>后退</Button>
               </div>
             </section>
           </div>
@@ -832,7 +736,6 @@ export default function DeviceControl() {
     </Space>
   );
 
-  /* ---------- 编辑设备对话框 ---------- */
   const renderEditModal = () => (
     <Modal
       title={editTarget ? `编辑设备 - ${editTarget.name}` : ''}
@@ -931,7 +834,6 @@ export default function DeviceControl() {
     </Modal>
   );
 
-  /* ---------- 添加设备对话框 ---------- */
   const renderAddModal = () => (
     <Modal
       title="添加设备"
@@ -1011,7 +913,7 @@ export default function DeviceControl() {
 
   return (
     <div>
-      <div className="page-header">
+      <div className={styles.pageHeader}>
         <h2>设备列表</h2>
       </div>
 

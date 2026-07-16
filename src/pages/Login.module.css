@@ -1,0 +1,70 @@
+/* Login 页面样式 */
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+}
+
+.card {
+  width: 800px;
+  display: flex;
+}
+
+.leftPanel {
+  flex: 1;
+  background: #ffffff;
+  border-radius: 12px 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #262626;
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.image {
+  width: 280px;
+  height: 280px;
+  object-fit: contain;
+}
+
+.rightPanel {
+  flex: 1;
+  padding: 40px;
+}
+
+.header {
+  margin-bottom: 32px;
+}
+
+.headerTitle {
+  font-size: 28px;
+  font-weight: 600;
+  color: #262626;
+  margin-bottom: 8px;
+}
+
+.headerSubtitle {
+  font-size: 14px;
+  color: #8c8c8c;
+  margin-bottom: 0;
+}
+
+.submitButton {
+  width: 100%;
+  background: linear-gradient(135deg, #f58020 0%, #d66d10 100%);
+  border: none;
+  height: 44px;
+  font-size: 16px;
+  font-weight: 500;
+}

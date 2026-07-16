@@ -1,0 +1,165 @@
+/* 页面通用样式 */
+
+.pageHeader {
+  margin-bottom: 24px;
+}
+
+.pageHeader h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #262626;
+  margin: 0;
+}
+
+/* 通用文字颜色 */
+.textSecondary {
+  color: #595959;
+}
+
+.textTertiary {
+  color: #8c8c8c;
+}
+
+/* 通用图标样式 */
+.icon {
+  font-size: 20px;
+}
+
+/* 通用间距 */
+.mb8 {
+  margin-bottom: 8px;
+}
+
+.mb12 {
+  margin-bottom: 12px;
+}
+
+.mb16 {
+  margin-bottom: 16px;
+}
+
+.mt16 {
+  margin-top: 16px;
+}
+
+/* 通用 Flex 布局 */
+.flexCenter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flexBetween {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 数值显示框 */
+.valueBox {
+  text-align: center;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  padding: 0 16px;
+  height: 36px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 18px;
+  font-weight: 600;
+  color: #262626;
+  line-height: 34px;
+}
+
+.valueBoxSmall {
+  composes: valueBox;
+  min-width: 160px;
+}
+
+.valueBoxLarge {
+  composes: valueBox;
+  min-width: 200px;
+}
+
+/* 操作按钮 */
+.actionButton {
+  background: #f58020 !important;
+  border-color: #f58020 !important;
+  width: 120px;
+  height: 36px;
+  padding: 0 14px;
+}
+
+.actionButtonSmall {
+  composes: actionButton;
+  width: 60px;
+  height: 28px;
+  padding: 0;
+  min-width: auto;
+}
+
+/* 数字输入框 */
+.numberInput {
+  width: 80px;
+  height: 28px;
+  text-align: center;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 16px;
+}
+
+/* 标签样式 */
+.label {
+  display: block;
+  margin-bottom: 6px;
+  color: #595959;
+  font-size: 13px;
+}
+
+.labelUnit {
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+/* 分隔线 */
+.divider {
+  margin: 12px 0;
+}
+
+/* 通用设置样式 */
+.settingsSection {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.settingsSectionTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: #262626;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.settingsRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.settingsRow:last-child {
+  margin-bottom: 0;
+}
+
+.settingsLabel {
+  width: 120px;
+  font-size: 14px;
+  color: #595959;
+}
+
+.settingsControl {
+  flex: 1;
+}

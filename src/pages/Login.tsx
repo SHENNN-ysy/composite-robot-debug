@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth';
 import { useEffect } from 'react';
 import loginImage from '../assets/login-robot.png';
+import styles from './Login.module.css';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -26,55 +27,25 @@ export default function Login() {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card" style={{ width: 800, display: 'flex' }}>
-        {/* 左侧图片和标题 */}
-        <div style={{
-          flex: 1,
-          background: '#ffffff',
-          borderRadius: '12px 0 0 12px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 48,
-        }}>
-          <h2 style={{
-            fontSize: 22,
-            fontWeight: 600,
-            color: '#262626',
-            marginBottom: 32,
-            textAlign: 'center',
-          }}>
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <div className={styles.leftPanel}>
+          <h2 className={styles.title}>
             复合机器人调试平台
           </h2>
           <img
             src={loginImage}
             alt="Robot"
-            style={{
-              width: 280,
-              height: 280,
-              objectFit: 'contain',
-            }}
+            className={styles.image}
           />
         </div>
 
-        {/* 右侧登录表单 */}
-        <div style={{ flex: 1, padding: 40 }}>
-          <div style={{ marginBottom: 32 }}>
-            <h1 style={{
-              fontSize: 28,
-              fontWeight: 600,
-              color: '#262626',
-              marginBottom: 8,
-            }}>
+        <div className={styles.rightPanel}>
+          <div className={styles.header}>
+            <h1 className={styles.headerTitle}>
               登录
             </h1>
-            <p style={{
-              fontSize: 14,
-              color: '#8c8c8c',
-              marginBottom: 0,
-            }}>
+            <p className={styles.headerSubtitle}>
               欢迎使用
             </p>
           </div>
@@ -121,11 +92,7 @@ export default function Login() {
               <Button
                 type="primary"
                 htmlType="submit"
-                className="login-button"
-                style={{
-                  background: 'linear-gradient(135deg, #f58020 0%, #d66d10 100%)',
-                  border: 'none',
-                }}
+                className={styles.submitButton}
               >
                 登 录
               </Button>

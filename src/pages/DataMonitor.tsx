@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Card, Row, Col, Table, Button, Space, Select, DatePicker, Tabs, Tag } from 'antd';
-import { Line } from '@ant-design/charts';
+import { Card, Table, Button, Space, Select, DatePicker, Tabs, Tag } from 'antd';
 import * as echarts from 'echarts';
 import { DownloadOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useRobotArmStore } from '../store/robotArm';
+import styles from '../styles/common.module.css';
+import pageStyles from './DataMonitor.module.css';
 
 interface DataRecord {
   id: string;
@@ -22,9 +23,7 @@ export default function DataMonitor() {
   const chartRef = useRef<HTMLDivElement>(null);
   const [timeRange, setTimeRange] = useState('30s');
   const [chartType, setChartType] = useState('all');
-
-  // 模拟数据
-  const [dataRecords, setDataRecords] = useState<DataRecord[]>(() => {
+  const [dataRecords] = useState<DataRecord[]>(() => {
     const records: DataRecord[] = [];
     const now = new Date();
     for (let i = 0; i < 50; i++) {
@@ -90,17 +89,17 @@ export default function DataMonitor() {
 
     chart.setOption(option);
 
-    // 定时更新
     const interval = setInterval(() => {
-      const newData = [...option.xAxis!.data as string[], `${(option.xAxis!.data as string[]).length}s`];
+      const xAxis = option.xAxis as { data: string[] };
+      const newData = [...xAxis.data, `${xAxis.data.length}s`];
       newData.shift();
-      option.xAxis!.data = newData;
+      xAxis.data = newData;
 
-      (option.series as echarts.SeriesOption[]).forEach((s, i) => {
-        const jointKeys: (keyof typeof robotArm.joints)[] = ['j1', 'j2', 'j3', 'j4', 'j5', 'j6'];
+      (option.series as { data: number[] }[]).forEach((s, i) => {
+        const jointKeys = ['j1', 'j2', 'j3', 'j4', 'j5', 'j6'] as const;
         const jointValue = robotArm.joints[jointKeys[i]];
-        (s.data as number[]).push(jointValue + (Math.random() * 4 - 2));
-        (s.data as number[]).shift();
+        s.data.push(jointValue + (Math.random() * 4 - 2));
+        s.data.shift();
       });
 
       chart.setOption(option);
@@ -146,7 +145,7 @@ export default function DataMonitor() {
 
   return (
     <div>
-      <div className="page-header">
+      <div className={styles.pageHeader}>
         <h2>数据监控</h2>
       </div>
 
@@ -158,7 +157,7 @@ export default function DataMonitor() {
             label: '实时图表',
             children: (
               <Card bordered={false}>
-                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className={pageStyles.toolbar}>
                   <Space>
                     <Select value={chartType} onChange={setChartType} style={{ width: 120 }}>
                       <Select.Option value="all">全部关节</Select.Option>
@@ -174,7 +173,7 @@ export default function DataMonitor() {
                   </Space>
                   <Button icon={<ReloadOutlined />}>刷新</Button>
                 </div>
-                <div ref={chartRef} style={{ width: '100%', height: 400 }} />
+                <div ref={chartRef} className={pageStyles.chartContainer} />
               </Card>
             ),
           },
@@ -183,7 +182,7 @@ export default function DataMonitor() {
             label: '数据表格',
             children: (
               <Card bordered={false}>
-                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className={pageStyles.tableToolbar}>
                   <Space>
                     <Button icon={<DownloadOutlined />}>导出CSV</Button>
                     <Button icon={<DownloadOutlined />}>导出Excel</Button>

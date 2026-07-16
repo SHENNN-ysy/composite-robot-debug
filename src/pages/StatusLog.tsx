@@ -5,6 +5,8 @@ import { useAGVStore } from '../store/agv';
 import { useAuthStore } from '../store/auth';
 import { useEffect, useMemo, useState } from 'react';
 import dayjs, { Dayjs } from 'dayjs';
+import styles from '../styles/common.module.css';
+import pageStyles from './StatusLog.module.css';
 
 interface OperationRecord {
   id: string;
@@ -50,7 +52,6 @@ export default function StatusLog() {
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
   const [records] = useState<OperationRecord[]>(initialRecords);
 
-  // 与真实设备连接状态联动：当前已连接设备高亮，未连接置灰
   const deviceConnected = (device: string) => {
     if (device === '机械臂') return robotArm.isConnected;
     if (device === 'AGV') return agv.isConnected;
@@ -59,7 +60,6 @@ export default function StatusLog() {
 
   const enrichedRecords = useMemo(() => {
     return records.map((r, idx) => {
-      // 最新一条记录的操作者联动为当前登录用户，模拟"实时新增的日志"
       if (idx === 0 && currentUser) {
         return { ...r, operator: currentUser };
       }
@@ -98,7 +98,6 @@ export default function StatusLog() {
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // 日期筛选后回到第 1 页
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedDate]);
@@ -141,14 +140,13 @@ export default function StatusLog() {
 
   return (
     <div>
-      <div className="page-header">
+      <div className={styles.pageHeader}>
         <h2>状态日志</h2>
       </div>
 
-      {/* 顶部：日期筛选 + 导出 */}
       <Card size="small" styles={{ body: { padding: 16 } }} style={{ marginBottom: 16 }}>
         <Space size={12} wrap>
-          <span style={{ color: '#595959' }}>日志日期：</span>
+          <span className={styles.textSecondary}>日志日期：</span>
           <DatePicker
             value={selectedDate}
             onChange={(val) => setSelectedDate(val)}
@@ -165,7 +163,6 @@ export default function StatusLog() {
         </Space>
       </Card>
 
-      {/* 操作记录 */}
       <Card
         title="操作记录"
         size="small"
@@ -178,8 +175,8 @@ export default function StatusLog() {
           size="small"
           pagination={false}
           footer={() => (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '4px 0' }}>
-              <span style={{ color: '#595959', fontSize: 13 }}>
+            <div className={pageStyles.footer}>
+              <span className={pageStyles.footerInfo}>
                 共 {total} 条记录
                 {selectedDate && `（${selectedDate.format('YYYY-MM-DD')}）`}
               </span>

@@ -9,12 +9,11 @@ import {
   useEdgesState,
   Connection,
   BackgroundVariant,
-  Panel,
   Node,
   Edge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Card, Button, Space, Table, Modal, Form, Input, Select, InputNumber, message } from 'antd';
+import { Card, Button, Space, Modal, Form, Input, Select, InputNumber, message } from 'antd';
 import {
   SaveOutlined,
   FolderOpenOutlined,
@@ -26,15 +25,16 @@ import {
   StepForwardOutlined,
 } from '@ant-design/icons';
 import { useLogStore } from '../store/logs';
+import styles from './FlowEditor.module.css';
 
 interface NodeData {
   label: string;
   icon: string;
   color: string;
   params: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
-// 预置节点类型
 const nodeCategories = [
   {
     title: '触发',
@@ -77,12 +77,12 @@ const nodeCategories = [
   },
 ];
 
-const initialNodes: Node<NodeData>[] = [
+const initialNodes: Node[] = [
   {
     id: '1',
-    type: 'start',
+    type: 'input',
     position: { x: 250, y: 50 },
-    data: { label: '开始', icon: '▶', color: '#52c41a', params: {} },
+    data: { label: '开始', icon: '▶', color: '#52c41a', params: {} } as NodeData,
   },
 ];
 
@@ -93,8 +93,8 @@ const defaultEdgeOptions = {
 
 export default function FlowEditor() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [selectedNode, setSelectedNode] = useState<Node<NodeData> | null>(null);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -110,20 +110,20 @@ export default function FlowEditor() {
     [setEdges]
   );
 
-  const onNodeClick = useCallback((_: React.MouseEvent, node: Node<NodeData>) => {
+  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
     setSelectedNode(node);
     form.setFieldsValue({
-      label: node.data.label,
-      ...node.data.params,
+      label: (node.data as NodeData).label,
+      ...(node.data as NodeData).params,
     });
   }, [form]);
 
   const handleAddNode = (type: string, label: string, icon: string, color: string) => {
-    const newNode: Node<NodeData> = {
+    const newNode: Node = {
       id: `${Date.now()}`,
       type: type === 'start' || type === 'end' ? 'input' : 'default',
       position: { x: 250 + Math.random() * 100, y: 150 + Math.random() * 50 },
-      data: { label, icon, color, params: {} },
+      data: { label, icon, color, params: {} } as NodeData,
     };
     setNodes((nds) => [...nds, newNode]);
     addLog('info', `添加节点: ${label}`);
@@ -138,7 +138,7 @@ export default function FlowEditor() {
           ? {
               ...node,
               data: {
-                ...node.data,
+                ...(node.data as NodeData),
                 label: values.label,
                 params: values,
               },
@@ -214,11 +214,6 @@ export default function FlowEditor() {
     message.warning('流程已停止');
   };
 
-  const logColumns = [
-    { title: '时间', dataIndex: 'time', key: 'time', width: 100 },
-    { title: '消息', dataIndex: 'message', key: 'message' },
-  ];
-
   return (
     <div>
       <div className="page-header">
@@ -230,8 +225,7 @@ export default function FlowEditor() {
         bodyStyle={{ padding: 0 }}
         style={{ overflow: 'hidden' }}
       >
-        {/* 工具栏 */}
-        <div className="flow-toolbar">
+        <div className={styles.toolbar}>
           <Space>
             <Button icon={<SaveOutlined />} onClick={handleSave}>
               保存
@@ -252,7 +246,7 @@ export default function FlowEditor() {
               icon={<PlayCircleOutlined />}
               onClick={handleRun}
               disabled={isRunning}
-              style={{ background: '#52c41a', borderColor: '#52c41a' }}
+              className={styles.runButton}
             >
               启动
             </Button>
@@ -278,23 +272,22 @@ export default function FlowEditor() {
         </div>
 
         <div style={{ display: 'flex', height: 'calc(100vh - 380px)' }}>
-          {/* 左侧节点面板 */}
-          <div className="node-palette">
-            <div style={{ fontWeight: 500, marginBottom: 12, color: '#262626' }}>
+          <div className={styles.palette}>
+            <div className={styles.paletteHeader}>
               节点库
             </div>
             {nodeCategories.map((category) => (
-              <div key={category.title} className="node-category">
-                <div className="node-category-title">{category.title}</div>
+              <div key={category.title} className={styles.category}>
+                <div className={styles.categoryTitle}>{category.title}</div>
                 {category.nodes.map((node) => (
                   <div
                     key={node.type}
-                    className="node-item"
+                    className={styles.item}
                     onClick={() =>
                       handleAddNode(node.type, node.label, node.icon, node.color)
                     }
                   >
-                    <span className="icon">{node.icon}</span>
+                    <span className={styles.itemIcon}>{node.icon}</span>
                     <span>{node.label}</span>
                   </div>
                 ))}
@@ -302,8 +295,7 @@ export default function FlowEditor() {
             ))}
           </div>
 
-          {/* 流程画布 */}
-          <div ref={reactFlowWrapper} style={{ flex: 1, height: '100%' }}>
+          <div ref={reactFlowWrapper} className={styles.canvas}>
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -323,9 +315,8 @@ export default function FlowEditor() {
             </ReactFlow>
           </div>
 
-          {/* 右侧属性面板 */}
-          <div className="property-panel">
-            <div style={{ fontWeight: 500, marginBottom: 16, color: '#262626' }}>
+          <div className={styles.propertyPanel}>
+            <div className={styles.panelHeader}>
               节点属性
             </div>
             {selectedNode ? (
@@ -352,22 +343,13 @@ export default function FlowEditor() {
                 </Button>
               </>
             ) : (
-              <div style={{ color: '#8c8c8c', textAlign: 'center', padding: 20 }}>
+              <div className={styles.emptyHint}>
                 点击节点查看属性
               </div>
             )}
 
-            <div style={{ marginTop: 24 }}>
-              <div
-                style={{
-                  fontWeight: 500,
-                  marginBottom: 12,
-                  color: '#262626',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
+            <div className={styles.logSection}>
+              <div className={styles.logSectionHeader}>
                 <span>运行日志</span>
                 <Button
                   type="link"
@@ -377,11 +359,11 @@ export default function FlowEditor() {
                   清空
                 </Button>
               </div>
-              <div className="log-container" style={{ maxHeight: 300 }}>
+              <div className={styles.logContainer}>
                 {useLogStore.getState().logs.slice(0, 20).map((log) => (
-                  <div key={log.id} className={`log-item level-${log.level}`}>
-                    <span className="time">[{log.time}]</span>{' '}
-                    <span className={`level-${log.level}`}>
+                  <div key={log.id} className={styles.logItem}>
+                    <span className={styles.logTime}>[{log.time}]</span>{' '}
+                    <span className={log.level === 'info' ? styles.logInfo : log.level === 'warn' ? styles.logWarn : styles.logError}>
                       {log.level === 'info' ? '[INFO]' : log.level === 'warn' ? '[WARN]' : '[ERROR]'}
                     </span>{' '}
                     {log.message}
@@ -393,7 +375,6 @@ export default function FlowEditor() {
         </div>
       </Card>
 
-      {/* 参数编辑弹窗 */}
       <Modal
         title="编辑节点参数"
         open={modalVisible}
