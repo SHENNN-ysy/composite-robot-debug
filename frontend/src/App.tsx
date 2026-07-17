@@ -5,7 +5,7 @@ import MainLayout from './layouts/MainLayout';
 import Home from './pages/Home';
 import DeviceControl from './pages/DeviceControl';
 import FlowEditor from './pages/FlowEditor';
-import DataMonitor from './pages/DataMonitor';
+import ProcessOrchestration from './pages/ProcessOrchestration';
 import StatusLog from './pages/StatusLog';
 import Settings from './pages/Settings';
 import { useAuthStore } from './store/auth';
@@ -42,9 +42,10 @@ function App() {
         <Route index element={<Navigate to="/home" replace />} />
         <Route path="home" element={<Home />} />
         <Route path="device" element={<DeviceControl />} />
-        <Route path="flow" element={<FlowEditor />} />
+        <Route path="flow" element={<Navigate to="/flow/process" replace />} />
+        <Route path="flow/process" element={<ProcessOrchestration />} />
+        <Route path="flow/program" element={<FlowEditor />} />
         <Route path="status" element={<StatusLog />} />
-        <Route path="data" element={<DataMonitor />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
     </Routes>

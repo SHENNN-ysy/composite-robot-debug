@@ -1,12 +1,16 @@
 import { Card, Table, Tag, Button, Space, DatePicker, message, Pagination, Select } from 'antd';
-import { DownloadOutlined } from '@ant-design/icons';
+import { DownloadOutlined, ReloadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useRobotArmStore } from '../store/robotArm';
 import { useAGVStore } from '../store/agv';
 import { useAuthStore } from '../store/auth';
-import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import dayjs, { Dayjs } from 'dayjs';
+import * as echarts from 'echarts';
 import styles from '../styles/common.module.css';
 import pageStyles from './StatusLog.module.css';
+
+type TabKey = 'log' | 'data';
 
 interface OperationRecord {
   id: string;
@@ -15,6 +19,115 @@ interface OperationRecord {
   operation: string;
   operator: string;
   detail: string;
+}
+
+interface DataRecord {
+  id: string;
+  time: string;
+  type: string;
+  j1: string;
+  j2: string;
+  j3: string;
+  j4: string;
+  j5: string;
+  j6: string;
+}
+
+function RealTimeChart() {
+  const joints = useRobotArmStore((state) => state.joints);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartInstanceRef = useRef<echarts.ECharts | null>(null);
+  const jointsRef = useRef(joints);
+  const dataRef = useRef<{ time: string[]; series: number[][] }>({
+    time: Array.from({ length: 30 }, (_, i) => `${i}s`),
+    series: [
+      Array.from({ length: 30 }, () => joints.j1),
+      Array.from({ length: 30 }, () => joints.j2),
+      Array.from({ length: 30 }, () => joints.j3),
+      Array.from({ length: 30 }, () => joints.j4),
+      Array.from({ length: 30 }, () => joints.j5),
+      Array.from({ length: 30 }, () => joints.j6),
+    ],
+  });
+
+  useEffect(() => {
+    jointsRef.current = joints;
+  }, [joints]);
+
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+
+    const chart = echarts.init(chartContainerRef.current);
+    chartInstanceRef.current = chart;
+
+    const option: echarts.EChartsOption = {
+      title: {
+        text: '实时数据监控',
+        left: 'center',
+        textStyle: { fontSize: 16, fontWeight: 500, color: '#262626' },
+      },
+      tooltip: { trigger: 'axis' },
+      legend: {
+        data: ['J1', 'J2', 'J3', 'J4', 'J5', 'J6'],
+        top: 30,
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        top: '80px',
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        boundaryGap: false,
+        data: dataRef.current.time,
+      },
+      yAxis: {
+        type: 'value',
+        name: '角度 (°)',
+        axisLabel: { formatter: '{value}°' },
+      },
+      series: [
+        { name: 'J1', type: 'line', data: dataRef.current.series[0], smooth: true, color: '#f58020' },
+        { name: 'J2', type: 'line', data: dataRef.current.series[1], smooth: true, color: '#1890ff' },
+        { name: 'J3', type: 'line', data: dataRef.current.series[2], smooth: true, color: '#52c41a' },
+        { name: 'J4', type: 'line', data: dataRef.current.series[3], smooth: true, color: '#722ed1' },
+        { name: 'J5', type: 'line', data: dataRef.current.series[4], smooth: true, color: '#faad14' },
+        { name: 'J6', type: 'line', data: dataRef.current.series[5], smooth: true, color: '#ff4d4f' },
+      ],
+    };
+
+    chart.setOption(option);
+
+    const interval = window.setInterval(() => {
+      const nextSecond = Number.parseInt(dataRef.current.time[dataRef.current.time.length - 1], 10) + 1;
+      dataRef.current.time = [...dataRef.current.time.slice(1), `${nextSecond}s`];
+
+      const jointKeys = ['j1', 'j2', 'j3', 'j4', 'j5', 'j6'] as const;
+      dataRef.current.series = dataRef.current.series.map((series, index) => [
+        ...series.slice(1),
+        jointsRef.current[jointKeys[index]] + (Math.random() * 4 - 2),
+      ]);
+
+      chart.setOption({
+        xAxis: { data: dataRef.current.time },
+        series: dataRef.current.series.map((data) => ({ data })),
+      });
+    }, 1000);
+
+    const handleResize = () => chart.resize();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('resize', handleResize);
+      chart.dispose();
+      chartInstanceRef.current = null;
+    };
+  }, []);
+
+  return <div ref={chartContainerRef} className={pageStyles.chartContainer} />;
 }
 
 const initialRecords: OperationRecord[] = [
@@ -46,11 +159,37 @@ const initialRecords: OperationRecord[] = [
 ];
 
 export default function StatusLog() {
+  const [searchParams] = useSearchParams();
+  const tab: TabKey = (searchParams.get('tab') as TabKey) || 'log';
+
   const robotArm = useRobotArmStore();
   const agv = useAGVStore();
   const currentUser = useAuthStore((state) => state.username);
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
   const [records] = useState<OperationRecord[]>(initialRecords);
+
+  // 数据监控相关
+  const [timeRange, setTimeRange] = useState('30s');
+  const [chartType, setChartType] = useState('all');
+  const [dataRecords] = useState<DataRecord[]>(() => {
+    const records: DataRecord[] = [];
+    const now = new Date();
+    for (let i = 0; i < 50; i++) {
+      const time = new Date(now.getTime() - i * 60000);
+      records.push({
+        id: `record-${i}`,
+        time: time.toLocaleString('zh-CN'),
+        type: ['角度变化', '速度变化', '位置变化'][i % 3],
+        j1: (Math.random() * 10 - 5).toFixed(1),
+        j2: (Math.random() * 10 - 45).toFixed(1),
+        j3: (Math.random() * 10 + 85).toFixed(1),
+        j4: (Math.random() * 10 - 5).toFixed(1),
+        j5: (Math.random() * 10 + 40).toFixed(1),
+        j6: (Math.random() * 10 - 5).toFixed(1),
+      });
+    }
+    return records;
+  });
 
   const deviceConnected = (device: string) => {
     if (device === '机械臂') return robotArm.isConnected;
@@ -102,6 +241,34 @@ export default function StatusLog() {
     setCurrentPage(1);
   }, [selectedDate]);
 
+  const dataColumns = [
+    { title: '时间', dataIndex: 'time', key: 'time', width: 180 },
+    { title: '类型', dataIndex: 'type', key: 'type', width: 120, render: (type: string) => {
+      const colors: Record<string, string> = {
+        '角度变化': 'blue',
+        '速度变化': 'green',
+        '位置变化': 'orange',
+      };
+      return <Tag color={colors[type] || 'default'}>{type}</Tag>;
+    }},
+    { title: 'J1', dataIndex: 'j1', key: 'j1', width: 80 },
+    { title: 'J2', dataIndex: 'j2', key: 'j2', width: 80 },
+    { title: 'J3', dataIndex: 'j3', key: 'j3', width: 80 },
+    { title: 'J4', dataIndex: 'j4', key: 'j4', width: 80 },
+    { title: 'J5', dataIndex: 'j5', key: 'j5', width: 80 },
+    { title: 'J6', dataIndex: 'j6', key: 'j6', width: 80 },
+    {
+      title: '操作',
+      key: 'action',
+      width: 80,
+      render: (_: unknown, record: DataRecord) => (
+        <Button type="link" size="small" onClick={() => console.log('查看详情', record)}>
+          详情
+        </Button>
+      ),
+    },
+  ];
+
   const total = filteredRecords.length;
   const pagedRecords = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -138,12 +305,10 @@ export default function StatusLog() {
     { title: '详情', dataIndex: 'detail', key: 'detail' },
   ];
 
-  return (
-    <div>
-      <div className={styles.pageHeader}>
-        <h2>状态日志</h2>
-      </div>
+  const pageTitle = tab === 'log' ? '操作日志' : '数据监控';
 
+  const renderOperationLog = () => (
+    <>
       <Card size="small" styles={{ body: { padding: 16 } }} style={{ marginBottom: 16 }}>
         <Space size={12} wrap>
           <span className={styles.textSecondary}>日志日期：</span>
@@ -153,21 +318,13 @@ export default function StatusLog() {
             allowClear
             placeholder="选择日期"
           />
-          <Button
-            type="primary"
-            icon={<DownloadOutlined />}
-            onClick={handleExport}
-          >
+          <Button type="primary" icon={<DownloadOutlined />} onClick={handleExport}>
             导出日志
           </Button>
         </Space>
       </Card>
 
-      <Card
-        title="操作记录"
-        size="small"
-        styles={{ header: { fontSize: 14 } }}
-      >
+      <Card title="操作记录" size="small" styles={{ header: { fontSize: 14 } }}>
         <Table
           rowKey="id"
           columns={recordColumns}
@@ -209,6 +366,72 @@ export default function StatusLog() {
           locale={{ emptyText: '所选日期暂无日志' }}
         />
       </Card>
+    </>
+  );
+
+  const renderDataTable = () => (
+    <Card bordered={false}>
+      <div className={pageStyles.tableToolbar}>
+        <Space>
+          <Button icon={<DownloadOutlined />}>导出CSV</Button>
+          <Button icon={<DownloadOutlined />}>导出Excel</Button>
+          <Button danger icon={<DeleteOutlined />}>清空数据</Button>
+        </Space>
+        <Space>
+          <DatePicker.RangePicker />
+          <Select defaultValue="20" style={{ width: 100 }}>
+            <Select.Option value="10">10条/页</Select.Option>
+            <Select.Option value="20">20条/页</Select.Option>
+            <Select.Option value="50">50条/页</Select.Option>
+          </Select>
+        </Space>
+      </div>
+      <Table
+        dataSource={dataRecords}
+        columns={dataColumns}
+        rowKey="id"
+        size="small"
+        pagination={{ pageSize: 20, showSizeChanger: false }}
+      />
+    </Card>
+  );
+
+  const renderDataMonitor = () => (
+    <>
+      <Card bordered={false} style={{ marginBottom: 16 }}>
+        <div className={pageStyles.toolbar}>
+          <Space>
+            <Select value={chartType} onChange={setChartType} style={{ width: 120 }}>
+              <Select.Option value="all">全部关节</Select.Option>
+              <Select.Option value="j1">J1</Select.Option>
+              <Select.Option value="j2">J2</Select.Option>
+              <Select.Option value="j3">J3</Select.Option>
+            </Select>
+            <Select value={timeRange} onChange={setTimeRange} style={{ width: 120 }}>
+              <Select.Option value="30s">30秒</Select.Option>
+              <Select.Option value="1m">1分钟</Select.Option>
+              <Select.Option value="5m">5分钟</Select.Option>
+            </Select>
+          </Space>
+          <Button icon={<ReloadOutlined />}>刷新</Button>
+        </div>
+        <RealTimeChart />
+      </Card>
+
+      <Card bordered={false}>
+        <div className={pageStyles.sectionTitle}>历史数据</div>
+        {renderDataTable()}
+      </Card>
+    </>
+  );
+
+  return (
+    <div>
+      <div className={styles.pageHeader}>
+        <h2>{pageTitle}</h2>
+      </div>
+
+      {tab === 'log' ? renderOperationLog() : renderDataMonitor()}
     </div>
   );
 }

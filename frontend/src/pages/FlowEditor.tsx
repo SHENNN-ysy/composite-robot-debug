@@ -26,6 +26,7 @@ import {
 } from '@ant-design/icons';
 import { useLogStore } from '../store/logs';
 import styles from './FlowEditor.module.css';
+import commonStyles from '../styles/common.module.css';
 
 interface NodeData {
   label: string;
@@ -91,7 +92,7 @@ const defaultEdgeOptions = {
   style: { stroke: '#f58020', strokeWidth: 2 },
 };
 
-export default function FlowEditor() {
+export function FlowEditorContent() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
@@ -214,213 +215,139 @@ export default function FlowEditor() {
     message.warning('流程已停止');
   };
 
-  return (
-    <div>
-      <div className="page-header">
-        <h2>可视化编程</h2>
-      </div>
+  const renderToolbar = () => (
+    <div className={styles.toolbar}>
+      <Space>
+        <Button icon={<SaveOutlined />} onClick={handleSave}>保存</Button>
+        <Button icon={<FolderOpenOutlined />} onClick={handleLoad}>加载</Button>
+        <Button icon={<ExportOutlined />} onClick={handleExport}>导出</Button>
+        <Button danger icon={<DeleteOutlined />} onClick={handleClear}>清空</Button>
+      </Space>
+      <Space>
+        <Button type="primary" icon={<PlayCircleOutlined />} onClick={handleRun} disabled={isRunning} className={styles.runButton}>启动</Button>
+        <Button icon={<PauseCircleOutlined />} onClick={handlePause} disabled={!isRunning}>{isPaused ? '继续' : '暂停'}</Button>
+        <Button danger icon={<StopOutlined />} onClick={handleStop} disabled={!isRunning}>停止</Button>
+        <Button icon={<StepForwardOutlined />} disabled={isRunning}>单步</Button>
+      </Space>
+    </div>
+  );
 
-      <Card
-        bordered={false}
-        bodyStyle={{ padding: 0 }}
-        style={{ overflow: 'hidden' }}
-      >
-        <div className={styles.toolbar}>
-          <Space>
-            <Button icon={<SaveOutlined />} onClick={handleSave}>
-              保存
-            </Button>
-            <Button icon={<FolderOpenOutlined />} onClick={handleLoad}>
-              加载
-            </Button>
-            <Button icon={<ExportOutlined />} onClick={handleExport}>
-              导出
-            </Button>
-            <Button danger icon={<DeleteOutlined />} onClick={handleClear}>
-              清空
-            </Button>
-          </Space>
-          <Space>
-            <Button
-              type="primary"
-              icon={<PlayCircleOutlined />}
-              onClick={handleRun}
-              disabled={isRunning}
-              className={styles.runButton}
-            >
-              启动
-            </Button>
-            <Button
-              icon={<PauseCircleOutlined />}
-              onClick={handlePause}
-              disabled={!isRunning}
-            >
-              {isPaused ? '继续' : '暂停'}
-            </Button>
-            <Button
-              danger
-              icon={<StopOutlined />}
-              onClick={handleStop}
-              disabled={!isRunning}
-            >
-              停止
-            </Button>
-            <Button icon={<StepForwardOutlined />} disabled={isRunning}>
-              单步
-            </Button>
-          </Space>
+  const renderPalette = () => (
+    <div className={styles.palette}>
+      <div className={styles.paletteHeader}>节点库</div>
+      {nodeCategories.map((category) => (
+        <div key={category.title} className={styles.category}>
+          <div className={styles.categoryTitle}>{category.title}</div>
+          {category.nodes.map((node) => (
+            <div key={node.type} className={styles.item} onClick={() => handleAddNode(node.type, node.label, node.icon, node.color)}>
+              <span className={styles.itemIcon}>{node.icon}</span>
+              <span>{node.label}</span>
+            </div>
+          ))}
         </div>
+      ))}
+    </div>
+  );
 
+  const renderCanvas = () => (
+    <div ref={reactFlowWrapper} className={styles.canvas}>
+      <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={onNodeClick} fitView style={{ background: '#fafafa' }}>
+        <Controls />
+        <MiniMap nodeColor={(node) => (node.data as NodeData)?.color || '#ccc'} maskColor="rgba(0, 0, 0, 0.1)" />
+        <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+      </ReactFlow>
+    </div>
+  );
+
+  const renderPropertyPanel = () => (
+    <div className={styles.propertyPanel}>
+      <div className={styles.panelHeader}>节点属性</div>
+      {selectedNode ? (
+        <>
+          <Form form={form} layout="vertical" size="small">
+            <Form.Item label="名称" name="label"><Input /></Form.Item>
+            <Button type="primary" block onClick={() => setModalVisible(true)}>编辑参数</Button>
+          </Form>
+          <Button danger block style={{ marginTop: 16 }} onClick={handleDeleteNode}>删除节点</Button>
+        </>
+      ) : (
+        <div className={styles.emptyHint}>点击节点查看属性</div>
+      )}
+      <div className={styles.logSection}>
+        <div className={styles.logSectionHeader}>
+          <span>运行日志</span>
+          <Button type="link" size="small" onClick={() => useLogStore.getState().clearLogs()}>清空</Button>
+        </div>
+        <div className={styles.logContainer}>
+          {useLogStore.getState().logs.slice(0, 20).map((log) => (
+            <div key={log.id} className={styles.logItem}>
+              <span className={styles.logTime}>[{log.time}]</span>{' '}
+              <span className={log.level === 'info' ? styles.logInfo : log.level === 'warn' ? styles.logWarn : styles.logError}>
+                {log.level === 'info' ? '[INFO]' : log.level === 'warn' ? '[WARN]' : '[ERROR]'}
+              </span>{' '}{log.message}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderEditModal = () => (
+    <Modal title="编辑节点参数" open={modalVisible} onOk={handleUpdateNode} onCancel={() => setModalVisible(false)}>
+      <Form form={form} layout="vertical">
+        <Form.Item label="名称" name="label"><Input /></Form.Item>
+        {selectedNode?.type === 'moveJ' || selectedNode?.type === 'moveL' ? (
+          <>
+            <Form.Item label="速度 (%)" name="speed" initialValue={50}><InputNumber min={1} max={100} style={{ width: '100%' }} /></Form.Item>
+            <Form.Item label="J1 (°)" name="j1" initialValue={0}><InputNumber /></Form.Item>
+            <Form.Item label="J2 (°)" name="j2" initialValue={0}><InputNumber /></Form.Item>
+            <Form.Item label="J3 (°)" name="j3" initialValue={0}><InputNumber /></Form.Item>
+          </>
+        ) : selectedNode?.type === 'delay' ? (
+          <Form.Item label="延时时间 (秒)" name="delay" initialValue={1}><InputNumber min={0} style={{ width: '100%' }} /></Form.Item>
+        ) : selectedNode?.type === 'gotoStation' ? (
+          <Form.Item label="目标工位" name="station" initialValue="station-1">
+            <Select>
+              <Select.Option value="station-1">工位1</Select.Option>
+              <Select.Option value="station-2">工位2</Select.Option>
+              <Select.Option value="station-3">工位3</Select.Option>
+              <Select.Option value="station-4">工位4</Select.Option>
+              <Select.Option value="station-5">工位5</Select.Option>
+            </Select>
+          </Form.Item>
+        ) : selectedNode?.type === 'grasp' ? (
+          <Form.Item label="夹爪力度 (%)" name="force" initialValue={50}><InputNumber min={1} max={100} style={{ width: '100%' }} /></Form.Item>
+        ) : null}
+      </Form>
+    </Modal>
+  );
+
+  const renderMainContent = () => (
+    <>
+      <Card bordered={false} bodyStyle={{ padding: 0 }} style={{ overflow: 'hidden' }}>
+        {renderToolbar()}
         <div style={{ display: 'flex', height: 'calc(100vh - 380px)' }}>
-          <div className={styles.palette}>
-            <div className={styles.paletteHeader}>
-              节点库
-            </div>
-            {nodeCategories.map((category) => (
-              <div key={category.title} className={styles.category}>
-                <div className={styles.categoryTitle}>{category.title}</div>
-                {category.nodes.map((node) => (
-                  <div
-                    key={node.type}
-                    className={styles.item}
-                    onClick={() =>
-                      handleAddNode(node.type, node.label, node.icon, node.color)
-                    }
-                  >
-                    <span className={styles.itemIcon}>{node.icon}</span>
-                    <span>{node.label}</span>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-
-          <div ref={reactFlowWrapper} className={styles.canvas}>
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              onNodeClick={onNodeClick}
-              fitView
-              style={{ background: '#fafafa' }}
-            >
-              <Controls />
-              <MiniMap
-                nodeColor={(node) => (node.data as NodeData)?.color || '#ccc'}
-                maskColor="rgba(0, 0, 0, 0.1)"
-              />
-              <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-            </ReactFlow>
-          </div>
-
-          <div className={styles.propertyPanel}>
-            <div className={styles.panelHeader}>
-              节点属性
-            </div>
-            {selectedNode ? (
-              <>
-                <Form form={form} layout="vertical" size="small">
-                  <Form.Item label="名称" name="label">
-                    <Input />
-                  </Form.Item>
-                  <Button
-                    type="primary"
-                    block
-                    onClick={() => setModalVisible(true)}
-                  >
-                    编辑参数
-                  </Button>
-                </Form>
-                <Button
-                  danger
-                  block
-                  style={{ marginTop: 16 }}
-                  onClick={handleDeleteNode}
-                >
-                  删除节点
-                </Button>
-              </>
-            ) : (
-              <div className={styles.emptyHint}>
-                点击节点查看属性
-              </div>
-            )}
-
-            <div className={styles.logSection}>
-              <div className={styles.logSectionHeader}>
-                <span>运行日志</span>
-                <Button
-                  type="link"
-                  size="small"
-                  onClick={() => useLogStore.getState().clearLogs()}
-                >
-                  清空
-                </Button>
-              </div>
-              <div className={styles.logContainer}>
-                {useLogStore.getState().logs.slice(0, 20).map((log) => (
-                  <div key={log.id} className={styles.logItem}>
-                    <span className={styles.logTime}>[{log.time}]</span>{' '}
-                    <span className={log.level === 'info' ? styles.logInfo : log.level === 'warn' ? styles.logWarn : styles.logError}>
-                      {log.level === 'info' ? '[INFO]' : log.level === 'warn' ? '[WARN]' : '[ERROR]'}
-                    </span>{' '}
-                    {log.message}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          {renderPalette()}
+          {renderCanvas()}
+          {renderPropertyPanel()}
         </div>
       </Card>
+      {renderEditModal()}
+    </>
+  );
 
-      <Modal
-        title="编辑节点参数"
-        open={modalVisible}
-        onOk={handleUpdateNode}
-        onCancel={() => setModalVisible(false)}
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item label="名称" name="label">
-            <Input />
-          </Form.Item>
-          {selectedNode?.type === 'moveJ' || selectedNode?.type === 'moveL' ? (
-            <>
-              <Form.Item label="速度 (%)" name="speed" initialValue={50}>
-                <InputNumber min={1} max={100} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item label="J1 (°)" name="j1" initialValue={0}>
-                <InputNumber />
-              </Form.Item>
-              <Form.Item label="J2 (°)" name="j2" initialValue={0}>
-                <InputNumber />
-              </Form.Item>
-              <Form.Item label="J3 (°)" name="j3" initialValue={0}>
-                <InputNumber />
-              </Form.Item>
-            </>
-          ) : selectedNode?.type === 'delay' ? (
-            <Form.Item label="延时时间 (秒)" name="delay" initialValue={1}>
-              <InputNumber min={0} style={{ width: '100%' }} />
-            </Form.Item>
-          ) : selectedNode?.type === 'gotoStation' ? (
-            <Form.Item label="目标工位" name="station" initialValue="station-1">
-              <Select>
-                <Select.Option value="station-1">工位1</Select.Option>
-                <Select.Option value="station-2">工位2</Select.Option>
-                <Select.Option value="station-3">工位3</Select.Option>
-                <Select.Option value="station-4">工位4</Select.Option>
-                <Select.Option value="station-5">工位5</Select.Option>
-              </Select>
-            </Form.Item>
-          ) : selectedNode?.type === 'grasp' ? (
-            <Form.Item label="夹爪力度 (%)" name="force" initialValue={50}>
-              <InputNumber min={1} max={100} style={{ width: '100%' }} />
-            </Form.Item>
-          ) : null}
-        </Form>
-      </Modal>
+  return renderMainContent();
+}
+
+export default function VisualProgramming() {
+  const pageTitle = '可视化编程';
+
+  const renderMainContent = () => <FlowEditorContent />;
+
+  return (
+    <div>
+      <div className={commonStyles.pageHeader}><h2>{pageTitle}</h2></div>
+      {renderMainContent()}
     </div>
   );
 }

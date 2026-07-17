@@ -26,79 +26,48 @@ export default function Login() {
     }
   };
 
+  const pageTitle = '登录';
+
+  const renderLeftPanel = () => (
+    <div className={styles.leftPanel}>
+      <h2 className={styles.title}>复合机器人调试平台</h2>
+      <img src={loginImage} alt="Robot" className={styles.image} />
+    </div>
+  );
+
+  const renderLoginForm = () => (
+    <div className={styles.rightPanel}>
+      <div className={styles.header}>
+        <h1 className={styles.headerTitle}>{pageTitle}</h1>
+        <p className={styles.headerSubtitle}>欢迎使用</p>
+      </div>
+      <Form name="login" className="login-form" initialValues={{ remember: true }} onFinish={onFinish} size="large">
+        <Form.Item name="username" rules={[{ required: true, message: '请输入用户名' }]}>
+          <Input prefix={<UserOutlined style={{ color: '#bfbfbf' }} />} placeholder="用户名" />
+        </Form.Item>
+        <Form.Item name="password" rules={[{ required: true, message: '请输入密码' }]}>
+          <Input.Password prefix={<LockOutlined style={{ color: '#bfbfbf' }} />} placeholder="密码" />
+        </Form.Item>
+        <Form.Item>
+          <div className="login-actions">
+            <Form.Item name="remember" valuePropName="checked" noStyle>
+              <Checkbox>记住密码</Checkbox>
+            </Form.Item>
+            <a href="#" style={{ color: '#f58020' }}>忘记密码？</a>
+          </div>
+        </Form.Item>
+        <Form.Item>
+          <Button type="primary" htmlType="submit" className={styles.submitButton}>登 录</Button>
+        </Form.Item>
+      </Form>
+    </div>
+  );
+
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <div className={styles.leftPanel}>
-          <h2 className={styles.title}>
-            复合机器人调试平台
-          </h2>
-          <img
-            src={loginImage}
-            alt="Robot"
-            className={styles.image}
-          />
-        </div>
-
-        <div className={styles.rightPanel}>
-          <div className={styles.header}>
-            <h1 className={styles.headerTitle}>
-              登录
-            </h1>
-            <p className={styles.headerSubtitle}>
-              欢迎使用
-            </p>
-          </div>
-
-          <Form
-            name="login"
-            className="login-form"
-            initialValues={{ remember: true }}
-            onFinish={onFinish}
-            size="large"
-          >
-            <Form.Item
-              name="username"
-              rules={[{ required: true, message: '请输入用户名' }]}
-            >
-              <Input
-                prefix={<UserOutlined style={{ color: '#bfbfbf' }} />}
-                placeholder="用户名"
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="password"
-              rules={[{ required: true, message: '请输入密码' }]}
-            >
-              <Input.Password
-                prefix={<LockOutlined style={{ color: '#bfbfbf' }} />}
-                placeholder="密码"
-              />
-            </Form.Item>
-
-            <Form.Item>
-              <div className="login-actions">
-                <Form.Item name="remember" valuePropName="checked" noStyle>
-                  <Checkbox>记住密码</Checkbox>
-                </Form.Item>
-                <a href="#" style={{ color: '#f58020' }}>
-                  忘记密码？
-                </a>
-              </div>
-            </Form.Item>
-
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                className={styles.submitButton}
-              >
-                登 录
-              </Button>
-            </Form.Item>
-          </Form>
-        </div>
+        {renderLeftPanel()}
+        {renderLoginForm()}
       </div>
     </div>
   );

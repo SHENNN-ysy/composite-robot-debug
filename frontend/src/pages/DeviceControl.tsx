@@ -911,10 +911,12 @@ export default function DeviceControl() {
     </Modal>
   );
 
+  const pageTitle = tab === 'list' ? '设备列表' : '设备状态';
+
   return (
     <div>
       <div className={styles.pageHeader}>
-        <h2>设备列表</h2>
+        <h2>{pageTitle}</h2>
       </div>
 
       {tab === 'list' ? renderDeviceList() : renderDeviceStatus()}

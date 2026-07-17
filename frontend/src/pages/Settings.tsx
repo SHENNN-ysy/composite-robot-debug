@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Form, Input, Button, Space, message, Select, Table, Modal, Tag } from 'antd';
-import { PlusOutlined, DeleteOutlined, EditOutlined, ReloadOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, EditOutlined, ReloadOutlined, ClockCircleOutlined, CheckOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import styles from '../styles/common.module.css';
 import pageStyles from './Settings.module.css';
@@ -193,294 +193,296 @@ export default function Settings({ initialTab = 'general' }: SettingsProps) {
     },
   ];
 
+  const renderGeneralSettings = () => (
+    <Form form={form} layout="vertical">
+      <div className="settings-section">
+        <div className="settings-section-title">时间设置</div>
+
+        <div className="settings-row">
+          <div className="settings-label">系统时间</div>
+          <div className="settings-control">
+            <span className={pageStyles.systemTime}>
+              {currentTime.format('YYYY-MM-DD HH:mm:ss')}
+            </span>
+          </div>
+        </div>
+
+        <div className="settings-row">
+          <div className="settings-label">操作</div>
+          <div className="settings-control">
+            <Button type="primary" icon={<ClockCircleOutlined />} onClick={handleSyncTime}>
+              校时
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="settings-section">
+        <div className="settings-section-title">网络设置</div>
+
+        <div className="settings-row">
+          <div className="settings-label">本机IP</div>
+          <div className="settings-control">
+            <Form.Item
+              name="localIp"
+              initialValue="192.168.1.10"
+              style={{ marginBottom: 0 }}
+              rules={[
+                {
+                  pattern: /^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$/,
+                  message: '请输入有效的IP地址',
+                },
+              ]}
+            >
+              <Input style={{ width: 300 }} placeholder="192.168.1.10" disabled={!networkEditing} />
+            </Form.Item>
+          </div>
+        </div>
+
+        <div className="settings-row">
+          <div className="settings-label">子网掩码</div>
+          <div className="settings-control">
+            <Form.Item
+              name="subnetMask"
+              initialValue="255.255.255.0"
+              style={{ marginBottom: 0 }}
+              rules={[
+                {
+                  pattern: /^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$/,
+                  message: '请输入有效的子网掩码',
+                },
+              ]}
+            >
+              <Input style={{ width: 300 }} placeholder="255.255.255.0" disabled={!networkEditing} />
+            </Form.Item>
+          </div>
+        </div>
+
+        <div className="settings-row">
+          <div className="settings-label">默认网关</div>
+          <div className="settings-control">
+            <Form.Item
+              name="gateway"
+              initialValue="192.168.1.1"
+              style={{ marginBottom: 0 }}
+              rules={[
+                {
+                  pattern: /^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$/,
+                  message: '请输入有效的网关',
+                },
+              ]}
+            >
+              <Input style={{ width: 300 }} placeholder="192.168.1.1" disabled={!networkEditing} />
+            </Form.Item>
+          </div>
+        </div>
+
+        <div className="settings-row">
+          <div className="settings-label">DNS服务器</div>
+          <div className="settings-control">
+            <Form.Item
+              name="dns"
+              initialValue="8.8.8.8"
+              style={{ marginBottom: 0 }}
+              rules={[
+                {
+                  pattern: /^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$/,
+                  message: '请输入有效的DNS服务器地址',
+                },
+              ]}
+            >
+              <Input style={{ width: 300 }} placeholder="8.8.8.8" disabled={!networkEditing} />
+            </Form.Item>
+          </div>
+        </div>
+
+        <div className="settings-row">
+          <div className="settings-label">操作</div>
+          <div className="settings-control">
+            <Space>
+              {networkEditing ? (
+                <>
+                  <Button type="primary" icon={<CheckOutlined />} onClick={handleSaveNetwork}>
+                    保存设置
+                  </Button>
+                  <Button icon={<ReloadOutlined />} onClick={handleCancelEditNetwork}>
+                    取消
+                  </Button>
+                </>
+              ) : (
+                <Button icon={<EditOutlined />} onClick={handleStartEditNetwork}>
+                  修改设置
+                </Button>
+              )}
+            </Space>
+          </div>
+        </div>
+      </div>
+    </Form>
+  );
+
+  const renderUserSettings = () => (
+    <div>
+      <div className={pageStyles.userToolbar}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleAddUser}>
+          添加账号
+        </Button>
+      </div>
+
+      <Table
+        rowKey="id"
+        columns={userColumns}
+        dataSource={users}
+        pagination={{ pageSize: 10 }}
+        bordered
+      />
+
+      <Modal
+        title={editingUser ? '编辑账号' : '添加账号'}
+        open={addUserModalOpen}
+        onOk={handleUserSubmit}
+        onCancel={() => setAddUserModalOpen(false)}
+        okText="确认"
+        cancelText="取消"
+      >
+        <Form form={userForm} layout="vertical" style={{ marginTop: 16 }}>
+          <Form.Item name="username" label="账号" rules={[{ required: true, message: '请输入账号' }]}>
+            <Input placeholder="请输入账号" />
+          </Form.Item>
+          <Form.Item name="password" label="密码" rules={[{ required: true, message: '请输入密码' }]}>
+            <Input.Password placeholder="请输入密码" />
+          </Form.Item>
+          <Form.Item
+            name="confirmPassword"
+            label="确认密码"
+            dependencies={['password']}
+            rules={[
+              { required: true, message: '请再次输入密码' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('password') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('两次输入的密码不一致'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password placeholder="请再次输入密码" />
+          </Form.Item>
+          <Form.Item name="level" label="账号等级" rules={[{ required: true, message: '请选择账号等级' }]}>
+            <Select
+              placeholder="请选择账号等级"
+              options={[
+                { value: 'admin', label: '管理员' },
+                { value: 'technician', label: '技术员' },
+                { value: 'operator', label: '操作员' },
+              ]}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
+
+  const renderAbout = () => (
+    <div className="settings-section">
+      <div className="settings-section-title">设备信息</div>
+
+      <div className="settings-row">
+        <div className="settings-label">机器人型号</div>
+        <div className="settings-control">
+          <span className={pageStyles.infoValue}>CR-2026-Pro 复合机器人</span>
+        </div>
+      </div>
+
+      <div className="settings-row">
+        <div className="settings-label">机器人编号</div>
+        <div className="settings-control">
+          <span>RB-2026-0715-001</span>
+        </div>
+      </div>
+
+      <div className="settings-row">
+        <div className="settings-label">激活日期</div>
+        <div className="settings-control">
+          <span>2026-07-15</span>
+        </div>
+      </div>
+
+      <div className={pageStyles.sectionTitle}>软件信息</div>
+
+      <div className="settings-row">
+        <div className="settings-label">软件名称</div>
+        <div className="settings-control">
+          <span className={pageStyles.infoValue}>复合机器人调试平台</span>
+        </div>
+      </div>
+
+      <div className="settings-row">
+        <div className="settings-label">软件版本号</div>
+        <div className="settings-control">
+          <span>v1.0.0</span>
+        </div>
+      </div>
+
+      <div className="settings-row">
+        <div className="settings-label">构建时间</div>
+        <div className="settings-control">
+          <span>2026-07-15</span>
+        </div>
+      </div>
+
+      <div className={pageStyles.sectionTitle}>技术支持</div>
+
+      <div className="settings-row">
+        <div className="settings-label">技术支持方</div>
+        <div className="settings-control">
+          <span>复合机器人研发团队</span>
+        </div>
+      </div>
+
+      <div className="settings-row">
+        <div className="settings-label">联系电话</div>
+        <div className="settings-control">
+          <span>400-888-8888</span>
+        </div>
+      </div>
+
+      <div className="settings-row">
+        <div className="settings-label">邮箱</div>
+        <div className="settings-control">
+          <span>support@robot-debug.com</span>
+        </div>
+      </div>
+
+      <div className="settings-row">
+        <div className="settings-label">官网</div>
+        <div className="settings-control">
+          <a href="#" className={pageStyles.link}>www.robot-debug.com</a>
+        </div>
+      </div>
+
+      <div className="settings-row">
+        <div className="settings-label">版权信息</div>
+        <div className="settings-control">
+          <span>© 2026 复合机器人研发团队 版权所有</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  const pageTitle = activeTab === 'general' ? '通用设置' : activeTab === 'user' ? '用户设置' : '关于';
+
   return (
     <div>
       <div className={styles.pageHeader}>
-        <h2>
-          {activeTab === 'general' && '通用设置'}
-          {activeTab === 'user' && '用户设置'}
-          {activeTab === 'about' && '关于'}
-        </h2>
+        <h2>{pageTitle}</h2>
       </div>
 
-      {activeTab === 'general' && (
-        <Form form={form} layout="vertical">
-          <div className="settings-section">
-            <div className="settings-section-title">时间设置</div>
-
-            <div className="settings-row">
-              <div className="settings-label">系统时间</div>
-              <div className="settings-control">
-                <span className={pageStyles.systemTime}>
-                  {currentTime.format('YYYY-MM-DD HH:mm:ss')}
-                </span>
-              </div>
-            </div>
-
-            <div className="settings-row">
-              <div className="settings-label">操作</div>
-              <div className="settings-control">
-                <Button type="primary" icon={<ClockCircleOutlined />} onClick={handleSyncTime}>
-                  校时
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="settings-section">
-            <div className="settings-section-title">网络设置</div>
-
-            <div className="settings-row">
-              <div className="settings-label">本机IP</div>
-              <div className="settings-control">
-                <Form.Item
-                  name="localIp"
-                  initialValue="192.168.1.10"
-                  style={{ marginBottom: 0 }}
-                  rules={[
-                    {
-                      pattern: /^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$/,
-                      message: '请输入有效的IP地址',
-                    },
-                  ]}
-                >
-                  <Input style={{ width: 300 }} placeholder="192.168.1.10" disabled={!networkEditing} />
-                </Form.Item>
-              </div>
-            </div>
-
-            <div className="settings-row">
-              <div className="settings-label">子网掩码</div>
-              <div className="settings-control">
-                <Form.Item
-                  name="subnetMask"
-                  initialValue="255.255.255.0"
-                  style={{ marginBottom: 0 }}
-                  rules={[
-                    {
-                      pattern: /^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$/,
-                      message: '请输入有效的子网掩码',
-                    },
-                  ]}
-                >
-                  <Input style={{ width: 300 }} placeholder="255.255.255.0" disabled={!networkEditing} />
-                </Form.Item>
-              </div>
-            </div>
-
-            <div className="settings-row">
-              <div className="settings-label">默认网关</div>
-              <div className="settings-control">
-                <Form.Item
-                  name="gateway"
-                  initialValue="192.168.1.1"
-                  style={{ marginBottom: 0 }}
-                  rules={[
-                    {
-                      pattern: /^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$/,
-                      message: '请输入有效的网关',
-                    },
-                  ]}
-                >
-                  <Input style={{ width: 300 }} placeholder="192.168.1.1" disabled={!networkEditing} />
-                </Form.Item>
-              </div>
-            </div>
-
-            <div className="settings-row">
-              <div className="settings-label">DNS服务器</div>
-              <div className="settings-control">
-                <Form.Item
-                  name="dns"
-                  initialValue="8.8.8.8"
-                  style={{ marginBottom: 0 }}
-                  rules={[
-                    {
-                      pattern: /^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$/,
-                      message: '请输入有效的DNS',
-                    },
-                  ]}
-                >
-                  <Input style={{ width: 300 }} placeholder="8.8.8.8" disabled={!networkEditing} />
-                </Form.Item>
-              </div>
-            </div>
-
-            <div className="settings-row">
-              <div className="settings-label">操作</div>
-              <div className="settings-control">
-                <Space>
-                  {!networkEditing ? (
-                    <Button type="primary" onClick={handleStartEditNetwork}>
-                      修改网络
-                    </Button>
-                  ) : (
-                    <>
-                      <Button type="primary" onClick={handleSaveNetwork}>
-                        保存设置
-                      </Button>
-                      <Button icon={<ReloadOutlined />} onClick={handleCancelEditNetwork}>
-                        取消
-                      </Button>
-                    </>
-                  )}
-                </Space>
-              </div>
-            </div>
-          </div>
-        </Form>
-      )}
-
-      {activeTab === 'user' && (
-        <div>
-          <div className={pageStyles.userToolbar}>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAddUser}>
-              添加账号
-            </Button>
-          </div>
-
-          <Table
-            rowKey="id"
-            columns={userColumns}
-            dataSource={users}
-            pagination={{ pageSize: 10 }}
-            bordered
-          />
-
-          <Modal
-            title={editingUser ? '编辑账号' : '添加账号'}
-            open={addUserModalOpen}
-            onOk={handleUserSubmit}
-            onCancel={() => setAddUserModalOpen(false)}
-            okText="确认"
-            cancelText="取消"
-          >
-            <Form form={userForm} layout="vertical" style={{ marginTop: 16 }}>
-              <Form.Item name="username" label="账号" rules={[{ required: true, message: '请输入账号' }]}>
-                <Input placeholder="请输入账号" />
-              </Form.Item>
-              <Form.Item name="password" label="密码" rules={[{ required: true, message: '请输入密码' }]}>
-                <Input.Password placeholder="请输入密码" />
-              </Form.Item>
-              <Form.Item
-                name="confirmPassword"
-                label="确认密码"
-                dependencies={['password']}
-                rules={[
-                  { required: true, message: '请再次输入密码' },
-                  ({ getFieldValue }) => ({
-                    validator(_, value) {
-                      if (!value || getFieldValue('password') === value) {
-                        return Promise.resolve();
-                      }
-                      return Promise.reject(new Error('两次输入的密码不一致'));
-                    },
-                  }),
-                ]}
-              >
-                <Input.Password placeholder="请再次输入密码" />
-              </Form.Item>
-              <Form.Item name="level" label="账号等级" rules={[{ required: true, message: '请选择账号等级' }]}>
-                <Select
-                  placeholder="请选择账号等级"
-                  options={[
-                    { value: 'admin', label: '管理员' },
-                    { value: 'technician', label: '技术员' },
-                    { value: 'operator', label: '操作员' },
-                  ]}
-                />
-              </Form.Item>
-            </Form>
-          </Modal>
-        </div>
-      )}
-
-      {activeTab === 'about' && (
-        <div className="settings-section">
-          <div className="settings-section-title">设备信息</div>
-
-          <div className="settings-row">
-            <div className="settings-label">机器人型号</div>
-            <div className="settings-control">
-              <span className={pageStyles.infoValue}>CR-2026-Pro 复合机器人</span>
-            </div>
-          </div>
-
-          <div className="settings-row">
-            <div className="settings-label">机器人编号</div>
-            <div className="settings-control">
-              <span>RB-2026-0715-001</span>
-            </div>
-          </div>
-
-          <div className="settings-row">
-            <div className="settings-label">激活日期</div>
-            <div className="settings-control">
-              <span>2026-07-15</span>
-            </div>
-          </div>
-
-          <div className={pageStyles.sectionTitle}>软件信息</div>
-
-          <div className="settings-row">
-            <div className="settings-label">软件名称</div>
-            <div className="settings-control">
-              <span className={pageStyles.infoValue}>复合机器人调试平台</span>
-            </div>
-          </div>
-
-          <div className="settings-row">
-            <div className="settings-label">软件版本号</div>
-            <div className="settings-control">
-              <span>v1.0.0</span>
-            </div>
-          </div>
-
-          <div className="settings-row">
-            <div className="settings-label">构建时间</div>
-            <div className="settings-control">
-              <span>2026-07-15</span>
-            </div>
-          </div>
-
-          <div className={pageStyles.sectionTitle}>技术支持</div>
-
-          <div className="settings-row">
-            <div className="settings-label">技术支持方</div>
-            <div className="settings-control">
-              <span>复合机器人研发团队</span>
-            </div>
-          </div>
-
-          <div className="settings-row">
-            <div className="settings-label">联系电话</div>
-            <div className="settings-control">
-              <span>400-888-8888</span>
-            </div>
-          </div>
-
-          <div className="settings-row">
-            <div className="settings-label">邮箱</div>
-            <div className="settings-control">
-              <span>support@robot-debug.com</span>
-            </div>
-          </div>
-
-          <div className="settings-row">
-            <div className="settings-label">官网</div>
-            <div className="settings-control">
-              <a href="#" className={pageStyles.link}>www.robot-debug.com</a>
-            </div>
-          </div>
-
-          <div className="settings-row">
-            <div className="settings-label">版权信息</div>
-            <div className="settings-control">
-              <span>© 2026 复合机器人研发团队 版权所有</span>
-            </div>
-          </div>
-        </div>
-      )}
+      {activeTab === 'general' && renderGeneralSettings()}
+      {activeTab === 'user' && renderUserSettings()}
+      {activeTab === 'about' && renderAbout()}
     </div>
   );
 }

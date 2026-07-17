@@ -80,124 +80,86 @@ export default function Home() {
     },
   ];
 
+  const pageTitle = '欢迎使用复合机器人调试平台';
+
+  const renderDeviceStatus = () => (
+    <Card title="设备连接状态" bordered={false}>
+      {deviceStatus.map((device) => (
+        <div key={device.name} className={pageStyles.deviceRow}>
+          <div className={pageStyles.deviceInfo}>
+            {device.icon}
+            <span>{device.name}</span>
+          </div>
+          <Badge status={device.status === 'online' ? 'success' : 'default'} text={device.info} />
+        </div>
+      ))}
+    </Card>
+  );
+
+  const renderRobotArmStatus = () => (
+    <Card title="机械臂状态" bordered={false}>
+      <div className={styles.mb16}>
+        <div className={pageStyles.statusRow}>
+          <span className={styles.textSecondary}>连接状态</span>
+          <Badge status={robotArm.isConnected ? 'success' : 'default'} text={robotArm.isConnected ? '在线' : '离线'} />
+        </div>
+        <div className={pageStyles.statusRow}>
+          <span className={styles.textSecondary}>运行状态</span>
+          <Badge status={robotArm.isRunning ? 'processing' : 'default'} text={robotArm.isRunning ? '运行中' : '待机'} />
+        </div>
+      </div>
+      <div className={pageStyles.jointGrid}>
+        {Object.entries(robotArm.joints).map(([key, value]) => (
+          <div key={key} className={pageStyles.jointCell}>
+            <div className={pageStyles.jointLabel}>{key.toUpperCase()}</div>
+            <div className={pageStyles.jointValue}>{value.toFixed(1)}°</div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+
+  const renderAGVStatus = () => (
+    <Card title="AGV状态" bordered={false}>
+      <div className={styles.mb16}>
+        <div className={pageStyles.statusRow}>
+          <span className={styles.textSecondary}>位置</span>
+          <span className={pageStyles.statusValue}>({agv.position.x.toFixed(1)}, {agv.position.y.toFixed(1)})</span>
+        </div>
+        <div className={pageStyles.statusRow}>
+          <span className={styles.textSecondary}>电量</span>
+          <Progress percent={agv.battery} size="small" style={{ width: 120 }} strokeColor={agv.battery < 20 ? '#ff4d4f' : '#f58020'} />
+        </div>
+        <div className={pageStyles.statusRow}>
+          <span className={styles.textSecondary}>状态</span>
+          <Badge status={agv.status === 'idle' ? 'success' : agv.status === 'moving' ? 'processing' : 'error'}
+            text={agv.status === 'idle' ? '待机' : agv.status === 'moving' ? '移动中' : '错误'} />
+        </div>
+        <div className={pageStyles.statusRow}>
+          <span className={styles.textSecondary}>当前位置</span>
+          <span className={pageStyles.statusValue}>
+            {agv.currentStation ? agv.stations.find((s) => s.id === agv.currentStation)?.name : '未知'}
+          </span>
+        </div>
+      </div>
+    </Card>
+  );
+
+  const renderLogTable = () => (
+    <Card title="最近操作日志" bordered={false} style={{ marginTop: 16 }}>
+      <Table dataSource={logs.slice(0, 10)} columns={logColumns} rowKey="id" pagination={false} size="small" />
+    </Card>
+  );
+
   return (
     <div>
-      <div className={styles.pageHeader}>
-        <h2>欢迎使用复合机器人调试平台</h2>
-      </div>
-
+      <div className={styles.pageHeader}><h2>{pageTitle}</h2></div>
       <Row gutter={[16, 16]}>
-        <Col xs={24} lg={8}>
-          <Card title="设备连接状态" bordered={false}>
-            {deviceStatus.map((device) => (
-              <div key={device.name} className={pageStyles.deviceRow}>
-                <div className={pageStyles.deviceInfo}>
-                  {device.icon}
-                  <span>{device.name}</span>
-                </div>
-                <Badge
-                  status={device.status === 'online' ? 'success' : 'default'}
-                  text={device.info}
-                />
-              </div>
-            ))}
-          </Card>
-        </Col>
-
-        <Col xs={24} lg={8}>
-          <Card title="机械臂状态" bordered={false}>
-            <div className={styles.mb16}>
-              <div className={pageStyles.statusRow}>
-                <span className={styles.textSecondary}>连接状态</span>
-                <Badge
-                  status={robotArm.isConnected ? 'success' : 'default'}
-                  text={robotArm.isConnected ? '在线' : '离线'}
-                />
-              </div>
-              <div className={pageStyles.statusRow}>
-                <span className={styles.textSecondary}>运行状态</span>
-                <Badge
-                  status={robotArm.isRunning ? 'processing' : 'default'}
-                  text={robotArm.isRunning ? '运行中' : '待机'}
-                />
-              </div>
-            </div>
-            <div className={pageStyles.jointGrid}>
-              {Object.entries(robotArm.joints).map(([key, value]) => (
-                <div key={key} className={pageStyles.jointCell}>
-                  <div className={pageStyles.jointLabel}>{key.toUpperCase()}</div>
-                  <div className={pageStyles.jointValue}>
-                    {value.toFixed(1)}°
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </Col>
-
-        <Col xs={24} lg={8}>
-          <Card title="AGV状态" bordered={false}>
-            <div className={styles.mb16}>
-              <div className={pageStyles.statusRow}>
-                <span className={styles.textSecondary}>位置</span>
-                <span className={pageStyles.statusValue}>
-                  ({agv.position.x.toFixed(1)}, {agv.position.y.toFixed(1)})
-                </span>
-              </div>
-              <div className={pageStyles.statusRow}>
-                <span className={styles.textSecondary}>电量</span>
-                <Progress
-                  percent={agv.battery}
-                  size="small"
-                  style={{ width: 120 }}
-                  strokeColor={agv.battery < 20 ? '#ff4d4f' : '#f58020'}
-                />
-              </div>
-              <div className={pageStyles.statusRow}>
-                <span className={styles.textSecondary}>状态</span>
-                <Badge
-                  status={
-                    agv.status === 'idle'
-                      ? 'success'
-                      : agv.status === 'moving'
-                      ? 'processing'
-                      : 'error'
-                  }
-                  text={
-                    agv.status === 'idle'
-                      ? '待机'
-                      : agv.status === 'moving'
-                      ? '移动中'
-                      : '错误'
-                  }
-                />
-              </div>
-              <div className={pageStyles.statusRow}>
-                <span className={styles.textSecondary}>当前位置</span>
-                <span className={pageStyles.statusValue}>
-                  {agv.currentStation
-                    ? agv.stations.find((s) => s.id === agv.currentStation)?.name
-                    : '未知'}
-                </span>
-              </div>
-            </div>
-          </Card>
-        </Col>
+        <Col xs={24} lg={8}>{renderDeviceStatus()}</Col>
+        <Col xs={24} lg={8}>{renderRobotArmStatus()}</Col>
+        <Col xs={24} lg={8}>{renderAGVStatus()}</Col>
       </Row>
-
-      <Card
-        title="最近操作日志"
-        bordered={false}
-        style={{ marginTop: 16 }}
-      >
-        <Table
-          dataSource={logs.slice(0, 10)}
-          columns={logColumns}
-          rowKey="id"
-          pagination={false}
-          size="small"
-        />
-      </Card>
+      {renderLogTable()}
     </div>
   );
 }

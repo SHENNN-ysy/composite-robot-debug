@@ -19,22 +19,26 @@ export default function MainLayout() {
   const location = useLocation();
   const { username, logout } = useAuthStore();
 
-  const settingsSubItems: MenuProps['items'] = [
+  const settingsSubItems = [
     { key: '/settings?tab=general', label: '通用设置' },
     { key: '/settings?tab=user', label: '用户设置' },
     { key: '/settings?tab=about', label: '关于' },
   ];
-
-  const dataSubItems: MenuProps['items'] = [
-    { key: '/status', label: '状态日志' },
-    { key: '/data', label: '数据监控' },
-  ];
-
-  const deviceSubItems: MenuProps['items'] = [
+  
+  const deviceSubItems = [
     { key: '/device?tab=list', label: '设备列表' },
     { key: '/device?tab=status', label: '设备状态' },
   ];
-
+  
+  const statusSubItems = [
+    { key: '/status?tab=log', label: '状态日志' },
+    { key: '/status?tab=data', label: '数据监控' },
+  ];
+  
+  const programSubItems = [
+    { key: '/flow/process', label: '流程编排' },
+    { key: '/flow/program', label: '可视化编程' },
+  ];
   const menuItems: MenuProps['items'] = [
     {
       key: '/home',
@@ -44,19 +48,20 @@ export default function MainLayout() {
     {
       key: 'device',
       icon: <RobotOutlined />,
-      label: '设备列表',
+      label: '设备控制',
       children: deviceSubItems,
     },
     {
-      key: '/flow',
+      key: 'flow',
       icon: <LineChartOutlined />,
-      label: '可视化编程',
+      label: '系统流程',
+      children: programSubItems,
     },
     {
       key: 'data',
       icon: <DatabaseOutlined />,
       label: '状态信息',
-      children: dataSubItems,
+      children: statusSubItems,
     },
     {
       key: 'settings',
@@ -117,7 +122,15 @@ export default function MainLayout() {
                 ? (location.search.includes('tab=list') ? '/device?tab=list' : '/device?tab=status')
                 : location.pathname + (location.search.includes('tab=') ? location.search : ''),
             ]}
-            defaultOpenKeys={['device']}
+            defaultOpenKeys={[
+              location.pathname.startsWith('/flow')
+                ? 'flow'
+                : location.pathname.startsWith('/status')
+                  ? 'data'
+                  : location.pathname.startsWith('/settings')
+                    ? 'settings'
+                    : 'device',
+            ]}
             items={menuItems}
             onClick={({ key }) => navigate(key)}
             style={{ height: '100%', borderRight: 0 }}
