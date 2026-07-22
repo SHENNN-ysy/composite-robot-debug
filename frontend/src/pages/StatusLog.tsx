@@ -6,9 +6,28 @@ import { useAuthStore } from '../store/auth';
 import { useSearchParams } from 'react-router-dom';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import dayjs, { Dayjs } from 'dayjs';
-import * as echarts from 'echarts';
+import * as echarts from 'echarts/core';
+import { LineChart } from 'echarts/charts';
+import {
+  GridComponent,
+  LegendComponent,
+  TitleComponent,
+  TooltipComponent,
+} from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+import type { EChartsOption } from 'echarts';
 import styles from '../styles/common.module.css';
 import pageStyles from './StatusLog.module.css';
+import PageHeader from '@/components/common/PageHeader/PageHeader';
+
+echarts.use([
+  LineChart,
+  GridComponent,
+  LegendComponent,
+  TitleComponent,
+  TooltipComponent,
+  CanvasRenderer,
+]);
 
 type TabKey = 'log' | 'data';
 
@@ -36,7 +55,6 @@ interface DataRecord {
 function RealTimeChart() {
   const joints = useRobotArmStore((state) => state.joints);
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartInstanceRef = useRef<echarts.ECharts | null>(null);
   const jointsRef = useRef(joints);
   const dataRef = useRef<{ time: string[]; series: number[][] }>({
     time: Array.from({ length: 30 }, (_, i) => `${i}s`),
@@ -58,9 +76,7 @@ function RealTimeChart() {
     if (!chartContainerRef.current) return;
 
     const chart = echarts.init(chartContainerRef.current);
-    chartInstanceRef.current = chart;
-
-    const option: echarts.EChartsOption = {
+    const option: EChartsOption = {
       title: {
         text: '实时数据监控',
         left: 'center',
@@ -123,7 +139,6 @@ function RealTimeChart() {
       window.clearInterval(interval);
       window.removeEventListener('resize', handleResize);
       chart.dispose();
-      chartInstanceRef.current = null;
     };
   }, []);
 
@@ -370,7 +385,7 @@ export default function StatusLog() {
   );
 
   const renderDataTable = () => (
-    <Card bordered={false}>
+    <Card variant="borderless">
       <div className={pageStyles.tableToolbar}>
         <Space>
           <Button icon={<DownloadOutlined />}>导出CSV</Button>
@@ -398,7 +413,7 @@ export default function StatusLog() {
 
   const renderDataMonitor = () => (
     <>
-      <Card bordered={false} style={{ marginBottom: 16 }}>
+      <Card variant="borderless" style={{ marginBottom: 16 }}>
         <div className={pageStyles.toolbar}>
           <Space>
             <Select value={chartType} onChange={setChartType} style={{ width: 120 }}>
@@ -418,7 +433,7 @@ export default function StatusLog() {
         <RealTimeChart />
       </Card>
 
-      <Card bordered={false}>
+      <Card variant="borderless">
         <div className={pageStyles.sectionTitle}>历史数据</div>
         {renderDataTable()}
       </Card>
@@ -427,10 +442,7 @@ export default function StatusLog() {
 
   return (
     <div>
-      <div className={styles.pageHeader}>
-        <h2>{pageTitle}</h2>
-      </div>
-
+      <PageHeader title={pageTitle} />
       {tab === 'log' ? renderOperationLog() : renderDataMonitor()}
     </div>
   );

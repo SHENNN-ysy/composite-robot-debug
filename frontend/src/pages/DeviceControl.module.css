@@ -1,4 +1,4 @@
-/* DeviceControl 页面样式 */
+/* 设备控制面板公共样式 */
 
 /* ==================== 机械臂控制区域 ==================== */
 
@@ -69,18 +69,6 @@
 /* 操作按钮区域 */
 .actionArea {
   float: right;
-}
-
-/* 设备列表操作区 */
-.tableActions {
-  display: flex;
-  gap: 8px;
-}
-
-/* 提示文字 */
-.tipText {
-  color: #8c8c8c;
-  font-size: 12px;
 }
 
 /* ==================== AGV 控制面板区域 ==================== */
@@ -193,6 +181,10 @@
 
 .agv_field {
   min-width: 0;
+}
+
+.agv_numberInput {
+  width: 100%;
 }
 
 .agv_calibrationGrid {

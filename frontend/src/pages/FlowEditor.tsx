@@ -26,7 +26,7 @@ import {
 } from '@ant-design/icons';
 import { useLogStore } from '../store/logs';
 import styles from './FlowEditor.module.css';
-import commonStyles from '../styles/common.module.css';
+import { saveGeneratedLuaProgram } from '@/features/programming/programStorage';
 
 interface NodeData {
   label: string;
@@ -162,6 +162,7 @@ export function FlowEditorContent() {
   const handleSave = () => {
     const flowData = { nodes, edges };
     localStorage.setItem('flowData', JSON.stringify(flowData));
+    saveGeneratedLuaProgram(nodes.map((node) => String(node.data.label ?? node.type)));
     message.success('流程已保存');
     addLog('info', '保存流程');
   };
@@ -324,7 +325,7 @@ export function FlowEditorContent() {
 
   const renderMainContent = () => (
     <>
-      <Card bordered={false} bodyStyle={{ padding: 0 }} style={{ overflow: 'hidden' }}>
+      <Card variant="borderless" styles={{ body: { padding: 0 } }} style={{ overflow: 'hidden' }}>
         {renderToolbar()}
         <div style={{ display: 'flex', height: 'calc(100vh - 380px)' }}>
           {renderPalette()}
@@ -337,17 +338,4 @@ export function FlowEditorContent() {
   );
 
   return renderMainContent();
-}
-
-export default function VisualProgramming() {
-  const pageTitle = '可视化编程';
-
-  const renderMainContent = () => <FlowEditorContent />;
-
-  return (
-    <div>
-      <div className={commonStyles.pageHeader}><h2>{pageTitle}</h2></div>
-      {renderMainContent()}
-    </div>
-  );
 }

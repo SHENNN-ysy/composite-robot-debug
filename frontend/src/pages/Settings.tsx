@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Form, Input, Button, Space, message, Select, Table, Modal, Tag } from 'antd';
 import { PlusOutlined, DeleteOutlined, EditOutlined, ReloadOutlined, ClockCircleOutlined, CheckOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import styles from '../styles/common.module.css';
 import pageStyles from './Settings.module.css';
+import PageHeader from '@/components/common/PageHeader/PageHeader';
 
 export type SettingsTab = 'general' | 'user' | 'about';
 
@@ -476,10 +476,7 @@ export default function Settings({ initialTab = 'general' }: SettingsProps) {
 
   return (
     <div>
-      <div className={styles.pageHeader}>
-        <h2>{pageTitle}</h2>
-      </div>
-
+      <PageHeader title={pageTitle} />
       {activeTab === 'general' && renderGeneralSettings()}
       {activeTab === 'user' && renderUserSettings()}
       {activeTab === 'about' && renderAbout()}

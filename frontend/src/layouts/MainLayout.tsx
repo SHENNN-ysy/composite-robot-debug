@@ -1,16 +1,18 @@
 import { Layout, Menu, Avatar, Dropdown, Space } from 'antd';
 import {
-  HomeOutlined,
   SettingOutlined,
   LogoutOutlined,
   UserOutlined,
-  RobotOutlined,
-  LineChartOutlined,
-  DatabaseOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/auth';
+import {
+  getDefaultOpenMenuKey,
+  getSelectedMenuKey,
+  mainMenuItems,
+} from '@/config/navigation';
+import styles from './MainLayout.module.css';
 
 const { Header, Sider, Content } = Layout;
 
@@ -18,58 +20,6 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { username, logout } = useAuthStore();
-
-  const settingsSubItems = [
-    { key: '/settings?tab=general', label: '通用设置' },
-    { key: '/settings?tab=user', label: '用户设置' },
-    { key: '/settings?tab=about', label: '关于' },
-  ];
-  
-  const deviceSubItems = [
-    { key: '/device?tab=list', label: '设备列表' },
-    { key: '/device?tab=status', label: '设备状态' },
-  ];
-  
-  const statusSubItems = [
-    { key: '/status?tab=log', label: '状态日志' },
-    { key: '/status?tab=data', label: '数据监控' },
-  ];
-  
-  const programSubItems = [
-    { key: '/flow/process', label: '流程编排' },
-    { key: '/flow/program', label: '可视化编程' },
-  ];
-  const menuItems: MenuProps['items'] = [
-    {
-      key: '/home',
-      icon: <HomeOutlined />,
-      label: '首页',
-    },
-    {
-      key: 'device',
-      icon: <RobotOutlined />,
-      label: '设备控制',
-      children: deviceSubItems,
-    },
-    {
-      key: 'flow',
-      icon: <LineChartOutlined />,
-      label: '系统流程',
-      children: programSubItems,
-    },
-    {
-      key: 'data',
-      icon: <DatabaseOutlined />,
-      label: '状态信息',
-      children: statusSubItems,
-    },
-    {
-      key: 'settings',
-      icon: <SettingOutlined />,
-      label: '系统设置',
-      children: settingsSubItems,
-    },
-  ];
 
   const userMenuItems: MenuProps['items'] = [
     {
@@ -97,15 +47,15 @@ export default function MainLayout() {
   ];
 
   return (
-    <Layout className="main-layout">
-      <Header className="main-header">
-        <div className="logo">
-          <div className="logo-icon">R</div>
+    <Layout className={styles.layout}>
+      <Header className={styles.header}>
+        <div className={styles.logo}>
+          <div className={styles.logoIcon}>R</div>
           <span>复合机器人调试平台</span>
         </div>
-        <div className="user-info">
+        <div className={styles.userInfo}>
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-            <Space style={{ cursor: 'pointer' }}>
+            <Space className={styles.userTrigger}>
               <Avatar size="small" icon={<UserOutlined />} />
               <span>{username}</span>
             </Space>
@@ -114,31 +64,19 @@ export default function MainLayout() {
       </Header>
 
       <Layout>
-        <Sider width={200} className="main-sider">
+        <Sider width={200} className={styles.sider}>
           <Menu
             mode="inline"
-            selectedKeys={[
-              location.pathname.startsWith('/device')
-                ? (location.search.includes('tab=list') ? '/device?tab=list' : '/device?tab=status')
-                : location.pathname + (location.search.includes('tab=') ? location.search : ''),
-            ]}
-            defaultOpenKeys={[
-              location.pathname.startsWith('/flow')
-                ? 'flow'
-                : location.pathname.startsWith('/status')
-                  ? 'data'
-                  : location.pathname.startsWith('/settings')
-                    ? 'settings'
-                    : 'device',
-            ]}
-            items={menuItems}
+            selectedKeys={[getSelectedMenuKey(location.pathname, location.search)]}
+            defaultOpenKeys={[getDefaultOpenMenuKey(location.pathname)]}
+            items={mainMenuItems}
             onClick={({ key }) => navigate(key)}
-            style={{ height: '100%', borderRight: 0 }}
+            className={styles.menu}
           />
         </Sider>
 
-        <Layout style={{ padding: 0 }}>
-          <Content className="main-content">
+        <Layout className={styles.contentLayout}>
+          <Content className={styles.content}>
             <Outlet />
           </Content>
         </Layout>

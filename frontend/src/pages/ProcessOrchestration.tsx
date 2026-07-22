@@ -1,5 +1,5 @@
 import { FlowEditorContent } from './FlowEditor';
-import commonStyles from '../styles/common.module.css';
+import PageHeader from '@/components/common/PageHeader/PageHeader';
 
 export default function ProcessOrchestration() {
   const pageTitle = '流程编排';
@@ -8,7 +8,7 @@ export default function ProcessOrchestration() {
 
   return (
     <div>
-      <div className={commonStyles.pageHeader}><h2>{pageTitle}</h2></div>
+      <PageHeader title={pageTitle} />
       {renderMainContent()}
     </div>
   );

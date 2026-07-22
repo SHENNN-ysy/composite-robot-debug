@@ -10,6 +10,7 @@ import { useLogStore, LogEntry } from '../store/logs';
 import { useEffect } from 'react';
 import styles from '../styles/common.module.css';
 import pageStyles from './Home.module.css';
+import PageHeader from '@/components/common/PageHeader/PageHeader';
 
 export default function Home() {
   const robotArm = useRobotArmStore();
@@ -83,7 +84,7 @@ export default function Home() {
   const pageTitle = '欢迎使用复合机器人调试平台';
 
   const renderDeviceStatus = () => (
-    <Card title="设备连接状态" bordered={false}>
+    <Card title="设备连接状态" variant="borderless">
       {deviceStatus.map((device) => (
         <div key={device.name} className={pageStyles.deviceRow}>
           <div className={pageStyles.deviceInfo}>
@@ -97,7 +98,7 @@ export default function Home() {
   );
 
   const renderRobotArmStatus = () => (
-    <Card title="机械臂状态" bordered={false}>
+    <Card title="机械臂状态" variant="borderless">
       <div className={styles.mb16}>
         <div className={pageStyles.statusRow}>
           <span className={styles.textSecondary}>连接状态</span>
@@ -120,7 +121,7 @@ export default function Home() {
   );
 
   const renderAGVStatus = () => (
-    <Card title="AGV状态" bordered={false}>
+    <Card title="AGV状态" variant="borderless">
       <div className={styles.mb16}>
         <div className={pageStyles.statusRow}>
           <span className={styles.textSecondary}>位置</span>
@@ -146,14 +147,14 @@ export default function Home() {
   );
 
   const renderLogTable = () => (
-    <Card title="最近操作日志" bordered={false} style={{ marginTop: 16 }}>
+    <Card title="最近操作日志" variant="borderless" style={{ marginTop: 16 }}>
       <Table dataSource={logs.slice(0, 10)} columns={logColumns} rowKey="id" pagination={false} size="small" />
     </Card>
   );
 
   return (
     <div>
-      <div className={styles.pageHeader}><h2>{pageTitle}</h2></div>
+      <PageHeader title={pageTitle} />
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={8}>{renderDeviceStatus()}</Col>
         <Col xs={24} lg={8}>{renderRobotArmStatus()}</Col>
