@@ -1,0 +1,162 @@
+/* 机械臂 IO 与示教点面板的公共外观。 */
+.panelCard {
+  margin-top: 16px;
+}
+
+.panelCard :global(.ant-card-head-title) > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panelHint {
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+/* 四组 IO 在宽屏横向排列，在窄屏自动折行。 */
+.ioGroups {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.ioGroup {
+  overflow: hidden;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ioGroupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 11px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.ioGroupHeader strong {
+  color: #262626;
+  font-size: 14px;
+}
+
+.ioGroupHeader span {
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+.ioChannels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(72px, 1fr));
+}
+
+.ioChannel {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-right: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+  color: #595959;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.ioChannel:nth-child(2n) {
+  border-right: 0;
+}
+
+.ioChannel:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
+/* 输入类信号（DI/CI）的只读状态点：接通=实心绿点，断开=灰色空心点。 */
+.ioDot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.ioDotOn {
+  background: #52c41a;
+  border: 2px solid #52c41a;
+  box-shadow: 0 0 4px rgba(82, 196, 26, 0.6);
+}
+
+.ioDotOff {
+  background: transparent;
+  border: 2px solid #bfbfbf;
+}
+
+/* 表单分组标题让 12 个坐标字段更容易扫描。 */
+.teachPointForm {
+  padding-top: 8px;
+}
+
+.formSectionTitle {
+  margin: 2px 0 12px;
+  padding-left: 9px;
+  border-left: 3px solid #f58020;
+  color: #595959;
+  font-weight: 600;
+}
+
+.coordinateInput {
+  width: 100%;
+}
+
+/* 示教点名称和坐标统一居中、加粗，便于快速核对点位。 */
+.teachPointValue {
+  color: #262626;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 操作按钮保持单行并留出稳定间距，避免固定列内互相覆盖。 */
+.teachPointActions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.teachPointActions :global(.ant-btn-link) {
+  padding-inline: 7px;
+}
+
+@media (max-width: 1100px) {
+  .ioGroups {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .ioGroups {
+    grid-template-columns: 1fr;
+  }
+
+  .panelCard :global(.ant-card-head) {
+    align-items: flex-start;
+  }
+
+  .panelCard :global(.ant-card-extra) {
+    width: 100%;
+    padding-top: 0;
+  }
+
+  .panelCard :global(.ant-card-extra) > div {
+    display: flex;
+    width: 100%;
+  }
+
+  .panelCard :global(.ant-card-extra) .ant-input-affix-wrapper {
+    flex: 1;
+  }
+}

@@ -1,10 +1,23 @@
+/**
+ * 状态日志页（操作日志 / 数据监控两个子页签）。
+ *
+ * <p>通过 URL 查询参数 ?tab=log|data 切换子页（由侧边菜单跳转时携带），默认为操作日志。</p>
+ *
+ * <p>操作日志：调用 GET /api/logs/operations（logApi.operations）拉取后端落库的操作记录，
+ * 映射为表格行后支持按日期筛选、前端本地分页和导出 CSV；
+ * 「设备对象」列结合机械臂/AGV store 的实时在线状态（WebSocket 推送维护）显示在线圆点。</p>
+ *
+ * <p>数据监控：RealTimeChart 以 1s 周期读取机械臂 store 中由 WebSocket 推送刷新的关节角，
+ * 叠加随机扰动绘制 30 点滚动曲线（联调原型的演示效果）；「历史数据」表格为前端生成的模拟数据，
+ * 工具栏与筛选器尚未接入真实后端接口。</p>
+ */
 import { Card, Table, Tag, Button, Space, DatePicker, message, Pagination, Select } from 'antd';
 import { DownloadOutlined, ReloadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useRobotArmStore } from '../store/robotArm';
 import { useAGVStore } from '../store/agv';
 import { useAuthStore } from '../store/auth';
 import { useSearchParams } from 'react-router-dom';
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import dayjs, { Dayjs } from 'dayjs';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
@@ -19,6 +32,7 @@ import type { EChartsOption } from 'echarts';
 import styles from '../styles/common.module.css';
 import pageStyles from './StatusLog.module.css';
 import PageHeader from '@/components/common/PageHeader/PageHeader';
+import { logApi } from '@/services/api';
 
 echarts.use([
   LineChart,
@@ -29,8 +43,10 @@ echarts.use([
   CanvasRenderer,
 ]);
 
+/** 子页签标识：log=操作日志，data=数据监控；取自 URL 查询参数 tab。 */
 type TabKey = 'log' | 'data';
 
+/** 操作日志表格行，由后端 OperationLogRecord（/api/logs/operations）映射而来。 */
 interface OperationRecord {
   id: string;
   time: string;
@@ -40,6 +56,7 @@ interface OperationRecord {
   detail: string;
 }
 
+/** 数据监控历史表格行；联调原型为前端生成的模拟数据，未接后端。 */
 interface DataRecord {
   id: string;
   time: string;
@@ -52,10 +69,18 @@ interface DataRecord {
   j6: string;
 }
 
+/**
+ * 实时关节角监控折线图（数据监控页签）。
+ *
+ * <p>订阅机械臂 store 的 joints（由 WebSocket 推送的 arm.status/device.snapshot 刷新），
+ * 以 1s 定时器把最新关节角追加进 30 点滑动窗口并重绘曲线；为演示波动效果叠加了 ±2° 随机扰动。</p>
+ */
 function RealTimeChart() {
   const joints = useRobotArmStore((state) => state.joints);
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  // jointsRef 保存最新关节角供定时器闭包读取，避免 setInterval 捕获到过期的渲染值
   const jointsRef = useRef(joints);
+  // 图表数据放在 ref 中维护：每秒仅调用 chart.setOption 增量刷新，不触发 React 重渲染
   const dataRef = useRef<{ time: string[]; series: number[][] }>({
     time: Array.from({ length: 30 }, (_, i) => `${i}s`),
     series: [
@@ -75,6 +100,7 @@ function RealTimeChart() {
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
+    // echarts 实例只初始化一次，之后靠定时器 setOption 推动画
     const chart = echarts.init(chartContainerRef.current);
     const option: EChartsOption = {
       title: {
@@ -116,6 +142,7 @@ function RealTimeChart() {
 
     chart.setOption(option);
 
+    // 每秒把 30 点滑动窗口左移一格，追加最新关节角（叠加 ±2° 随机扰动模拟现场波动）
     const interval = window.setInterval(() => {
       const nextSecond = Number.parseInt(dataRef.current.time[dataRef.current.time.length - 1], 10) + 1;
       dataRef.current.time = [...dataRef.current.time.slice(1), `${nextSecond}s`];
@@ -136,6 +163,7 @@ function RealTimeChart() {
     window.addEventListener('resize', handleResize);
 
     return () => {
+      // 卸载时清理定时器与 resize 监听并销毁图表实例，防止内存泄漏与重复绘制
       window.clearInterval(interval);
       window.removeEventListener('resize', handleResize);
       chart.dispose();
@@ -145,47 +173,50 @@ function RealTimeChart() {
   return <div ref={chartContainerRef} className={pageStyles.chartContainer} />;
 }
 
-const initialRecords: OperationRecord[] = [
-  { id: '1',  time: '2026-07-15 19:23:10', device: '机械臂', operation: '关节运动', operator: 'admin', detail: '执行完成' },
-  { id: '2',  time: '2026-07-15 19:21:05', device: '机械臂', operation: '位置示教', operator: 'user',  detail: '示教点已保存' },
-  { id: '3',  time: '2026-07-15 19:18:42', device: '机械臂', operation: '原点复归', operator: 'admin', detail: '原点复归完成' },
-  { id: '4',  time: '2026-07-15 19:15:30', device: '机械臂', operation: '速度设置', operator: 'user',  detail: '速度已调整为50%' },
-  { id: '5',  time: '2026-07-15 19:10:15', device: '机械臂', operation: '急停触发', operator: 'admin', detail: '急停按钮被按下' },
-  { id: '6',  time: '2026-07-15 19:05:00', device: 'AGV',    operation: '导航到站点', operator: 'user',  detail: '前往工位1' },
-  { id: '7',  time: '2026-07-15 18:52:21', device: '机械臂', operation: 'IO控制',    operator: 'admin', detail: '夹爪开合完成' },
-  { id: '8',  time: '2026-07-15 18:45:08', device: 'AGV',    operation: '路径规划',  operator: 'user',  detail: '重新规划路径' },
-  { id: '9',  time: '2026-07-15 18:33:55', device: '机械臂', operation: '示教保存',  operator: 'admin', detail: '保存示教点 P12' },
-  { id: '10', time: '2026-07-15 18:20:11', device: '机械臂', operation: '坐标设定',  operator: 'user',  detail: '更新基坐标系' },
-  { id: '11', time: '2026-07-15 18:10:02', device: 'AGV',    operation: '充电管理',  operator: 'admin', detail: '返回充电桩' },
-  { id: '12', time: '2026-07-15 17:58:46', device: '机械臂', operation: '关节运动',  operator: 'user',  detail: '运动中...' },
-  { id: '13', time: '2026-07-15 17:42:30', device: '机械臂', operation: '原点复归',  operator: 'admin', detail: '原点复归完成' },
-  { id: '14', time: '2026-07-15 17:30:15', device: 'AGV',    operation: '避障上报',  operator: 'user',  detail: '检测到障碍物已规避' },
-  { id: '15', time: '2026-07-15 17:22:09', device: '机械臂', operation: '模式切换',  operator: 'admin', detail: '切换至自动模式' },
-  { id: '16', time: '2026-07-15 17:15:00', device: '机械臂', operation: '速度设置',  operator: 'user',  detail: '速度已调整为30%' },
-  { id: '17', time: '2026-07-15 17:05:33', device: 'AGV',    operation: '任务下发',  operator: 'admin', detail: '已派发搬运任务' },
-  { id: '18', time: '2026-07-15 16:58:20', device: '机械臂', operation: '关节运动',  operator: 'user',  detail: '执行完成' },
-  { id: '19', time: '2026-07-15 16:45:12', device: '机械臂', operation: '坐标读取',  operator: 'admin', detail: '读取当前位置' },
-  { id: '20', time: '2026-07-15 16:30:00', device: 'AGV',    operation: '低电警告',  operator: 'system',detail: '剩余电量18%' },
-  { id: '21', time: '2026-07-14 18:08:00', device: 'AGV',    operation: '模式切换',  operator: 'admin', detail: '已切换至手动模式' },
-  { id: '22', time: '2026-07-14 17:05:33', device: 'AGV',    operation: '关节运动',  operator: 'user',  detail: '运动中...' },
-  { id: '23', time: '2026-07-14 16:42:10', device: '机械臂', operation: '关节运动',  operator: 'admin', detail: '执行完成' },
-  { id: '24', time: '2026-07-14 15:33:48', device: '机械臂', operation: 'IO控制',    operator: 'user',  detail: '夹爪闭合' },
-  { id: '25', time: '2026-07-14 14:21:05', device: 'AGV',    operation: '导航到站点', operator: 'admin', detail: '前往工位2' },
-];
-
+/** 状态日志页组件：操作日志（真实后端数据）与数据监控（联调原型演示）两个子页签。 */
 export default function StatusLog() {
   const [searchParams] = useSearchParams();
+  // 子页签来自 URL 查询参数（侧边菜单跳转时携带 ?tab=log|data），默认操作日志
   const tab: TabKey = (searchParams.get('tab') as TabKey) || 'log';
 
   const robotArm = useRobotArmStore();
   const agv = useAGVStore();
   const currentUser = useAuthStore((state) => state.username);
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
-  const [records] = useState<OperationRecord[]>(initialRecords);
+  const [records, setRecords] = useState<OperationRecord[]>([]);
+  const [recordsLoading, setRecordsLoading] = useState(false);
+
+  /** 从后端重新加载操作日志，并统一维护表格加载状态和错误提示。 */
+  const loadOperationLogs = useCallback(async () => {
+    setRecordsLoading(true);
+    try {
+      const items = await logApi.operations();
+      // targetType→设备对象、action→操作、operatorName→操作者、详情优先取 detailJson 否则 result
+      setRecords(items.map((item) => ({
+          id: String(item.id),
+          time: dayjs(item.createdAt).format('YYYY-MM-DD HH:mm:ss'),
+          device: item.targetType,
+          operation: item.action,
+          operator: item.operatorName || 'unknown',
+          detail: item.detailJson || item.result,
+      })));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '操作日志加载失败';
+      message.error(errorMessage);
+    } finally {
+      setRecordsLoading(false);
+    }
+  }, []);
+
+  // 进入操作日志页签时自动加载数据库中的最新记录。
+  useEffect(() => {
+    if (tab === 'log') void loadOperationLogs();
+  }, [tab, loadOperationLogs]);
 
   // 数据监控相关
-  const [timeRange, setTimeRange] = useState('30s');
-  const [chartType, setChartType] = useState('all');
+  const [timeRange, setTimeRange] = useState('30s'); // 图表时间范围，仅界面状态，暂未作用于数据
+  const [chartType, setChartType] = useState('all'); // 图表关节筛选，仅界面状态，暂未作用于数据
+  // 历史数据表格：前端按每分钟一条生成 50 条模拟记录，联调原型未接后端历史接口
   const [dataRecords] = useState<DataRecord[]>(() => {
     const records: DataRecord[] = [];
     const now = new Date();
@@ -206,12 +237,14 @@ export default function StatusLog() {
     return records;
   });
 
+  // 把日志中的设备名称映射到对应 store 的实时在线状态；无法识别的设备默认按在线显示
   const deviceConnected = (device: string) => {
     if (device === '机械臂') return robotArm.isConnected;
     if (device === 'AGV') return agv.isConnected;
     return true;
   };
 
+  // 联调展示用：把最新一条记录的操作者强制显示为当前登录用户（表格中再高亮为「我」）
   const enrichedRecords = useMemo(() => {
     return records.map((r, idx) => {
       if (idx === 0 && currentUser) {
@@ -221,12 +254,14 @@ export default function StatusLog() {
     });
   }, [records, currentUser]);
 
+  // 日期筛选：未选日期显示全部；选了日期则按「天」粒度过滤，全部在前端完成
   const filteredRecords = useMemo(() => {
     const list = enrichedRecords;
     if (!selectedDate) return list;
     return list.filter((r) => dayjs(r.time).isSame(selectedDate, 'day'));
   }, [enrichedRecords, selectedDate]);
 
+  // 导出当前筛选结果为 CSV：前端拼接、浏览器下载，不经过后端
   const handleExport = () => {
     if (filteredRecords.length === 0) {
       message.warning('当前没有可导出的日志');
@@ -235,8 +270,10 @@ export default function StatusLog() {
     const header = ['时间', '设备对象', '操作', '操作者', '详情'];
     const rows = filteredRecords.map((r) => [r.time, r.device, r.operation, r.operator, r.detail]);
     const csv = [header, ...rows]
+      // 每字段加双引号包裹并转义内部引号，防止内容中的逗号/换行破坏 CSV 结构
       .map((cols) => cols.map((c) => `"${c.replace(/"/g, '""')}"`).join(','))
       .join('\n');
+    // 前置 BOM（\ufeff）保证 Excel 打开 CSV 时中文不乱码
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -249,13 +286,15 @@ export default function StatusLog() {
     message.success(`已导出 ${filteredRecords.length} 条日志`);
   };
 
+  // 操作日志为前端本地分页（后端一次返回全部记录）
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedDate]);
+  }, [selectedDate]); // 切换筛选日期后回到第一页，避免停留在超出结果范围的页码
 
+  // 数据监控历史表格列定义（数据源为前端模拟数据）
   const dataColumns = [
     { title: '时间', dataIndex: 'time', key: 'time', width: 180 },
     { title: '类型', dataIndex: 'type', key: 'type', width: 120, render: (type: string) => {
@@ -285,10 +324,12 @@ export default function StatusLog() {
   ];
 
   const total = filteredRecords.length;
+  // 本地分页切片：从筛选结果中截取当前页
   const pagedRecords = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredRecords.slice(start, start + pageSize);
   }, [filteredRecords, currentPage, pageSize]);
+  // 操作日志表格列：设备对象列叠加实时在线圆点，操作者列把当前用户高亮为「我」
   const recordColumns = [
     { title: '时间', dataIndex: 'time', key: 'time', width: 170 },
     {
@@ -322,6 +363,7 @@ export default function StatusLog() {
 
   const pageTitle = tab === 'log' ? '操作日志' : '数据监控';
 
+  // 操作日志页签：日期筛选 + 导出 + 本地分页表格
   const renderOperationLog = () => (
     <>
       <Card size="small" styles={{ body: { padding: 16 } }} style={{ marginBottom: 16 }}>
@@ -336,6 +378,9 @@ export default function StatusLog() {
           <Button type="primary" icon={<DownloadOutlined />} onClick={handleExport}>
             导出日志
           </Button>
+          <Button icon={<ReloadOutlined />} loading={recordsLoading} onClick={() => void loadOperationLogs()}>
+            刷新
+          </Button>
         </Space>
       </Card>
 
@@ -344,6 +389,7 @@ export default function StatusLog() {
           rowKey="id"
           columns={recordColumns}
           dataSource={pagedRecords}
+          loading={recordsLoading}
           size="small"
           pagination={false}
           footer={() => (
@@ -384,6 +430,7 @@ export default function StatusLog() {
     </>
   );
 
+  // 历史数据表格：工具栏按钮（导出/清空/范围筛选）均为占位 UI，尚未实现
   const renderDataTable = () => (
     <Card variant="borderless">
       <div className={pageStyles.tableToolbar}>
@@ -411,6 +458,8 @@ export default function StatusLog() {
     </Card>
   );
 
+  // 数据监控页签：上方实时曲线 + 下方历史数据表格；
+  // 关节/时间范围筛选与刷新按钮目前仅维护界面状态，未真正作用于图表与表格数据
   const renderDataMonitor = () => (
     <>
       <Card variant="borderless" style={{ marginBottom: 16 }}>

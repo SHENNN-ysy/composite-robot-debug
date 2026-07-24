@@ -1,0 +1,9 @@
+backend/target/
+backend/src/main/resources/application-secrets.yml
+frontend/dist/
+frontend/node_modules/
+.m2/
+**/.idea/
+**/__pycache__/
+*.pyc
+*.out

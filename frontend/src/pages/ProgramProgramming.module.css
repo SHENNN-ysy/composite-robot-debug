@@ -8,6 +8,7 @@
 .fileName { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .updatedAt { color: #8c8c8c; font-size: 12px; }
 .editor { display: flex; min-width: 0; flex-direction: column; }
+.emptyState { display: flex; flex: 1; min-height: 480px; flex-direction: column; align-items: center; justify-content: center; margin: 0; }
 .editorHeader { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
 .editorHeader > div { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .code { flex: 1; min-height: 480px; margin: 0; padding: 24px; overflow: auto; background: #1f2329; color: #e6edf3; font: 14px/1.7 Consolas, Monaco, monospace; tab-size: 2; }

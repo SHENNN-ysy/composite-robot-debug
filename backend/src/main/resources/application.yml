@@ -1,0 +1,55 @@
+# HTTP 服务端口，可通过环境变量覆盖。
+server:
+  port: ${SERVER_PORT:8080}
+
+# 数据库、迁移、JSON 与 MVC 基础配置。
+spring:
+  # 本地敏感值由 classpath 下被 Git 忽略的配置文件覆盖。
+  config:
+    import: optional:classpath:application-secrets.yml
+  application:
+    name: robot-debug-backend
+  datasource:
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/${DB_NAME:robot_debug}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: false
+  jackson:
+    default-property-inclusion: non_null
+    time-zone: Asia/Shanghai
+  mvc:
+    problemdetails:
+      enabled: false
+
+mybatis-plus:
+  type-aliases-package: com.robot.debug.application.model
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+
+# 后端作为 TCP Client 连接控制系统服务端，只接收状态数据。
+robot:
+  tcp:
+    host: ${TCP_HOST:127.0.0.1}
+    port: ${TCP_PORT:9000}
+    max-frame-length: 2097152
+    data-timeout-seconds: ${TCP_DATA_TIMEOUT_SECONDS:15}
+    reconnect-delay-seconds: ${TCP_RECONNECT_DELAY_SECONDS:3}
+  websocket:
+    path: /ws/control
+
+# 控制台日志使用 Spring Boot 的 %clr 转换器输出 ANSI 颜色，并保留 traceId。
+logging:
+  level:
+    com.robot.debug: INFO
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%-5level) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15thread]){faint} %clr([traceId=%X{traceId}]){magenta} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %msg%n%wEx"

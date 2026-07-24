@@ -11,14 +11,15 @@
 
 .stepGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 16px;
 }
 
 .stepRow {
   display: grid;
-  grid-template-columns: 120px 200px 120px;
+  min-width: 0;
+  grid-template-columns: minmax(64px, 120px) minmax(80px, 1fr) minmax(64px, 120px);
   gap: 8px;
   align-items: center;
 }
@@ -26,16 +27,31 @@
 /* 关节运动区域 */
 .jointGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 16px;
 }
 
 .jointRow {
   display: grid;
-  grid-template-columns: 120px 200px 120px;
+  min-width: 0;
+  grid-template-columns: minmax(64px, 120px) minmax(80px, 1fr) minmax(64px, 120px);
   gap: 8px;
   align-items: center;
+}
+
+/* 覆盖通用组件的固定宽度，保证按钮和数值框随当前列宽收缩。 */
+.stepRow > button,
+.jointRow > button {
+  width: 100%;
+  min-width: 0;
+}
+
+.stepRow > div,
+.jointRow > div {
+  width: 100%;
+  min-width: 0;
+  padding-inline: 8px;
 }
 
 /* 速度设置区域 */
@@ -317,6 +333,11 @@
 
 /* 中等屏幕：AGV 控制布局改为单列 */
 @media (max-width: 1050px) {
+  .stepGrid,
+  .jointGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .agv_controlLayout {
     grid-template-columns: 1fr;
   }
@@ -327,6 +348,11 @@
 
 /* 小屏幕：参数和校准控件堆叠 */
 @media (max-width: 680px) {
+  .stepGrid,
+  .jointGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .agv_controlSection {
     padding: 12px;
   }
